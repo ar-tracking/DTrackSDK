@@ -2,7 +2,7 @@
  *
  * Functions for receiving and sending UDP/TCP packets
  *
- * Copyright (c) 2007-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2007-2019, Advanced Realtime Tracking GmbH
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,7 +27,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.5.0
+ * Version v2.5.0 (modified)
  *
  */
 
@@ -255,7 +255,6 @@ int udp_exit(void* sock, unsigned int ip)
 #endif
 #ifdef OS_WIN
 	err = closesocket(s->ossock);
-	WSACleanup();
 #endif
 	free(sock);
 	if(err < 0)
@@ -390,19 +389,7 @@ int tcp_client_init(void** sock, unsigned int ip, unsigned short port)
 	{
 		return -11;
 	}
-	// initialize socket dll (only Windows):
-#ifdef OS_WIN
-	{
-		WORD vreq;
-		WSADATA wsa;
-		vreq = MAKEWORD(2, 0);
-		if (WSAStartup(vreq, &wsa) != 0)
-		{
-			free(s);
-			return -1;
-		}
-	}
-#endif
+
 	// create socket:
 #ifdef OS_UNIX
 	s->ossock = socket(PF_INET, SOCK_STREAM, 0);
@@ -416,7 +403,6 @@ int tcp_client_init(void** sock, unsigned int ip, unsigned short port)
 	s->ossock = socket(PF_INET, SOCK_STREAM, 0);
 	if (s->ossock == INVALID_SOCKET)
 	{
-		WSACleanup();
 		free(s);
 		return -2;
 	}
@@ -454,7 +440,6 @@ int tcp_exit(void* sock)
 #endif
 #ifdef OS_WIN
 	err = closesocket(s->ossock);
-	WSACleanup();
 #endif
 	free(sock);
 	if (err < 0)
