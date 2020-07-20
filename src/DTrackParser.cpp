@@ -1,8 +1,8 @@
 /* DTrackParser: C++ source file, A.R.T. GmbH
  *
- * DTrackParser: functions to process DTrack UDP packets (ASCII protocol)
+ * DTrackSDK: functions to process DTrack UDP packets (ASCII protocol).
  *
- * Copyright (c) 2013-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2013-2020, Advanced Realtime Tracking GmbH
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,12 +27,11 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.5.0
+ * Version v2.6.0
  *
  * Purpose:
- *  - DTrack2 network protocol due to: 'Technical Appendix DTrack v2.0'
- *  - for ARTtrack Controller versions v0.2 (and compatible versions)
- *
+ *  - DTrack network protocol according to:
+ *    'DTrack2 User Manual, Technical Appendix' or 'DTrack3 Programmer's Guide'
  */
 
 #include "DTrackParser.hpp"
@@ -40,13 +39,12 @@
 
 #include <cstring>
 
-using namespace DTrackSDK_Parse;
-
-// use Visual Studio specific secure methods to avoid warnings
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
-	#define strcpy strcpy_s
-	#define strcat strcat_s
+#if ! defined( _MSC_VER )
+	#define strcpy_s( a, b, c )  strcpy( a, c )  // map 'strcpy_s' if not Visual Studio
+	#define strcat_s( a, b, c )  strcat( a, c )  // map 'strcat_s' if not Visual Studio
 #endif
+
+using namespace DTrackSDK_Parse;
 
 
 /** Converts a stacked reduced (non-redundant) representation of a covariance matrix to a stacked full representation */
@@ -62,9 +60,8 @@ static void reduced_to_full_cov( double* cov_full, const double* cov_reduced, in
 }
 
 
-
-/**
- * 	\brief	Constructor.
+/*
+ * Constructor.
  */
 DTrackParser::DTrackParser()
 {
@@ -77,8 +74,9 @@ DTrackParser::DTrackParser()
 	act_num_marker = 0;
 }
 
-/**
- * 	\brief Destructor.
+
+/*
+ * Destructor.
  */
 DTrackParser::~DTrackParser()
 {
@@ -86,8 +84,8 @@ DTrackParser::~DTrackParser()
 }
 
 
-/**
- * 	\brief Set default values at start of a new frame.
+/*
+ * Set default values at start of a new frame.
  */
 void DTrackParser::startFrame()
 {
@@ -98,8 +96,8 @@ void DTrackParser::startFrame()
 }
 
 
-/**
- * 	\brief Final adjustments after processing all data for a frame.
+/*
+ * Final adjustments after processing all data for a frame.
  */
 void DTrackParser::endFrame()
 {
@@ -134,13 +132,8 @@ void DTrackParser::endFrame()
 }
 
 
-/**
- * 	\brief Parses a single line of data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line	one line of data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of data in one tracking data packet.
  */
 bool DTrackParser::parseLine(char **line)
 {
@@ -241,17 +234,14 @@ bool DTrackParser::parseLine(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of frame counter data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of 'fr' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of frame counter data in one tracking data packet.
  */
 bool DTrackParser::parseLine_fr(char **line)
 {
-	if (!(*line = string_get_ui(*line, &act_framecounter))) {
+	*line = string_get_ui( *line, &act_framecounter );
+	if ( *line == NULL )
+	{
 		act_framecounter = 0;
 		return false;
 	}
@@ -260,17 +250,14 @@ bool DTrackParser::parseLine_fr(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of timestamp data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of 'ts' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of timestamp data in one tracking data packet.
  */
 bool DTrackParser::parseLine_ts(char **line)
 {
-	if (!(*line = string_get_d(*line, &act_timestamp)))	{
+	*line = string_get_d( *line, &act_timestamp );
+	if ( *line == NULL )
+	{
 		act_timestamp = -1;
 		return false;
 	}
@@ -279,31 +266,21 @@ bool DTrackParser::parseLine_ts(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of additional information about number of calibrated bodies in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dcal' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of additional information about number of calibrated bodies in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dcal(char **line)
 {
-	if (!(*line = string_get_i(*line, &loc_num_bodycal))) {
+	*line = string_get_i( *line, &loc_num_bodycal );
+	if ( *line == 0 )
 		return false;
-	}
 	
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of standard body data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6d' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of standard body data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6d(char **line)
 {
@@ -316,15 +293,18 @@ bool DTrackParser::parseLine_6d(char **line)
 		act_body[i].id = i;
 		act_body[i].quality = -1;
 	}
+
 	// get number of standard bodies (in line)
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// get data of standard bodies
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "id", &id, NULL, &d))) {
+		*line = string_get_block( *line, "id", &id, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		// adjust length of vector
 		if (id >= act_num_body) {
 			act_body.resize(id + 1);
@@ -337,60 +317,55 @@ bool DTrackParser::parseLine_6d(char **line)
 		}
 		act_body[id].id = id;
 		act_body[id].quality = d;
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_body[id].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_body[ id ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_body[id].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_body[ id ].rot );
+		if ( *line == NULL )
 			return false;
-		}
 	}
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of 6d covariance data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dcov' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of 6d covariance data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dcov(char **line)
 {
-	int i, n, id;
-	double covref[3];
+	int n, id;
 	double cov_reduced[21];
 
 	// get number of standard bodies (in line)
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
 
 	// get covariance data
-	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "iddd", &id, NULL, covref))) {
+	for ( int i = 0; i < n; i++ )
+	{
+		double covref[ 3 ];
+		*line = string_get_block( *line, "iddd", &id, NULL, covref );
+		if ( *line == NULL )
 			return false;
-		}
-        for (int r=0; r<3; ++r) {
-            act_body[id].covref[r]  = covref[r];
-        }
-		if (!(*line = string_get_block(*line, "ddddddddddddddddddddd", NULL, NULL, cov_reduced))) {
+
+		for ( int j = 0; j < 3; j++ )
+			act_body[ id ].covref[ j ] = covref[ j ];
+
+		*line = string_get_block( *line, "ddddddddddddddddddddd", NULL, NULL, cov_reduced );
+		if ( *line == NULL )
 			return false;
-		}
+
 		reduced_to_full_cov( act_body[id].cov, cov_reduced, 6 );
 	}
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of Flystick data (older format) data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6df' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of Flystick data (older format) data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6df(char **line)
 {
@@ -398,9 +373,10 @@ bool DTrackParser::parseLine_6df(char **line)
 	double d;
 	
 	// get number of calibrated Flysticks
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	loc_num_flystick1 = n;
 	// adjust length of vector
 	if (n != act_num_flystick) {
@@ -409,9 +385,10 @@ bool DTrackParser::parseLine_6df(char **line)
 	}
 	// get data of Flysticks
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "idi", iarr, NULL, &d))) {
+		*line = string_get_block( *line, "idi", iarr, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (iarr[0] != i) {	// not expected
 			return false;
 		}
@@ -439,25 +416,22 @@ bool DTrackParser::parseLine_6df(char **line)
 		}else{
 			act_flystick[i].joystick[1] = 0;
 		}
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_flystick[i].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_flystick[ i ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_flystick[i].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_flystick[ i ].rot );
+		if ( *line == NULL )
 			return false;
-		}
 	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of Flystick data (newer format) data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6df2' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of Flystick data (newer format) data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6df2(char **line)
 {
@@ -466,23 +440,27 @@ bool DTrackParser::parseLine_6df2(char **line)
 	char sfmt[20];
 	
 	// get number of calibrated Flysticks
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// adjust length of vector
 	if (n != act_num_flystick) {
 		act_flystick.resize(n);
 		act_num_flystick = n;
 	}
+
 	// get number of Flysticks
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// get data of Flysticks
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "idii", iarr, NULL, &d))) {
+		*line = string_get_block( *line, "idii", iarr, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (iarr[0] != i) {  // not expected
 			return false;
 		}
@@ -494,26 +472,33 @@ bool DTrackParser::parseLine_6df2(char **line)
 		}
 		act_flystick[i].num_button = iarr[1];
 		act_flystick[i].num_joystick = iarr[2];
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_flystick[i].loc))){
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_flystick[ i ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_flystick[i].rot))){
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_flystick[ i ].rot );
+		if ( *line == NULL )
 			return false;
-		}
-		strcpy(sfmt, "");
+
+		strcpy_s( sfmt, sizeof( sfmt ), "" );
 		j = 0;
-		while (j < act_flystick[i].num_button) {
-			strcat(sfmt, "i");
+		while ( j < act_flystick[ i ].num_button )
+		{
+			strcat_s( sfmt, sizeof( sfmt ), "i" );
 			j += 32;
 		}
 		j = 0;
-		while (j < act_flystick[i].num_joystick) {
-			strcat(sfmt, "d");
+		while ( j < act_flystick[ i ].num_joystick )
+		{
+			strcat_s( sfmt, sizeof( sfmt ), "d" );
 			j++;
 		}
-		if (!(*line = string_get_block(*line, sfmt, iarr, NULL, act_flystick[i].joystick))) {
+
+		*line = string_get_block( *line, sfmt, iarr, NULL, act_flystick[ i ].joystick );
+		if ( *line == NULL )
 			return false;
-		}
+
 		k = l = 0;
 		for (j=0; j<act_flystick[i].num_button; j++) {
 			act_flystick[i].button[j] = iarr[k] & 0x01;
@@ -530,13 +515,8 @@ bool DTrackParser::parseLine_6df2(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of measurement tool data (older format) in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dmt' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of Measurement Tool data (older format) in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dmt(char **line)
 {
@@ -544,9 +524,10 @@ bool DTrackParser::parseLine_6dmt(char **line)
 	double d;
 	
 	// get number of calibrated measurement tools
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	loc_num_meatool1 = n;
 	// adjust length of vector
 	if (n != act_num_meatool) {
@@ -555,9 +536,10 @@ bool DTrackParser::parseLine_6dmt(char **line)
 	}
 	// get data of measurement tools
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "idi", iarr, NULL, &d))) {
+		*line = string_get_block( *line, "idi", iarr, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (iarr[0] != i) {  // not expected
 			return false;
 		}
@@ -576,14 +558,15 @@ bool DTrackParser::parseLine_6dmt(char **line)
 		}
 		
 		act_meatool[i].tipradius = 0.0;
-		
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_meatool[i].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_meatool[ i ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_meatool[i].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_meatool[ i ].rot );
+		if ( *line == NULL )
 			return false;
-		}
-		
+
 		for (j=0; j<9; j++)
 			act_meatool[i].cov[j] = 0.0;
 	}
@@ -592,13 +575,8 @@ bool DTrackParser::parseLine_6dmt(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of measurement tool data (newer format) data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dmt2' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of Measurement Tool data (newer format) data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dmt2(char **line)
 {
@@ -606,14 +584,16 @@ bool DTrackParser::parseLine_6dmt2(char **line)
 	double darr[2];
 	char sfmt[20];
 	double cov_reduced[6];
-	
+
 	// get number of calibrated measurement tools
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
-	if (!(*line = string_get_i(*line, &n))) {
+
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// adjust length of vector
 	if (n != act_num_meatool) {
 		act_meatool.resize(n);
@@ -621,9 +601,10 @@ bool DTrackParser::parseLine_6dmt2(char **line)
 	}
 	// get data of measurement tools
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "idid", iarr, NULL, darr))) {
+		*line = string_get_block( *line, "idid", iarr, NULL, darr );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (iarr[0] != i) {  // not expected
 			return false;
 		}
@@ -639,24 +620,27 @@ bool DTrackParser::parseLine_6dmt2(char **line)
 		}
 		
 		act_meatool[i].tipradius = darr[1];
-		
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_meatool[i].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_meatool[ i ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_meatool[i].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_meatool[ i ].rot );
+		if ( *line == NULL )
 			return false;
-		}
-		
-		strcpy(sfmt, "");
+
+		strcpy_s( sfmt, sizeof( sfmt ), "" );
 		j = 0;
-		while (j < act_meatool[i].num_button) {
-			strcat(sfmt, "i");
+		while ( j < act_meatool[ i ].num_button )
+		{
+			strcat_s( sfmt, sizeof( sfmt ), "i" );
 			j += 32;
 		}
-		
-		if (!(*line = string_get_block(*line, sfmt, iarr, NULL, NULL))) {
+
+		*line = string_get_block( *line, sfmt, iarr, NULL, NULL );
+		if ( *line == NULL )
 			return false;
-		}
+
 		k = l = 0;
 		for (j=0; j<act_meatool[i].num_button; j++) {
 			act_meatool[i].button[j] = iarr[k] & 0x01;
@@ -667,10 +651,11 @@ bool DTrackParser::parseLine_6dmt2(char **line)
 				l = 0;
 			}
 		}
-		
-		if (!(*line = string_get_block(*line, "dddddd", NULL, NULL, cov_reduced))) {
+
+		*line = string_get_block( *line, "dddddd", NULL, NULL, cov_reduced );
+		if ( *line == NULL )
 			return false;
-		}
+
 		reduced_to_full_cov( act_meatool[i].cov, cov_reduced, 3 );
 	}
 	
@@ -678,13 +663,8 @@ bool DTrackParser::parseLine_6dmt2(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of measurement reference data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dmtr' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of Measurement Tool reference data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dmtr(char **line)
 {
@@ -692,10 +672,10 @@ bool DTrackParser::parseLine_6dmtr(char **line)
 	double d;
 	
 	// get number of measurement references
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
-	
+
 	// adjust length of vector
 	if (n != act_num_mearef) {
 		act_mearef.resize(n);
@@ -708,59 +688,51 @@ bool DTrackParser::parseLine_6dmtr(char **line)
 		act_mearef[i].id = i;
 		act_mearef[i].quality = -1;
 	}
-	
+
 	// get number of calibrated measurement references
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
-	
+
 	// get data of measurement references
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "id", &id, NULL, &d))) {
+		*line = string_get_block( *line, "id", &id, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (id < 0 || id >= (int)act_mearef.size()) {
 			return false;
 		}
 		act_mearef[id].quality = d;
-		
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_mearef[id].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_mearef[ id ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_mearef[id].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_mearef[ id ].rot );
+		if ( *line == NULL )
 			return false;
-		}
 	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of additional information about number of calibrated Fingertracking hands in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of 'glcal' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of additional information about number of calibrated A.R.T. FINGERTRACKING hands in one tracking data packet.
  */
 bool DTrackParser::parseLine_glcal(char **line)
 {
-	if (!(*line = string_get_i(*line, &loc_num_handcal))) {	// get number of calibrated hands
+	*line = string_get_i( *line, &loc_num_handcal );  // get number of calibrated hands
+	if ( *line == NULL )
 		return false;
-	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of A.R.T. Fingertracking hand data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of 'gl' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of A.R.T. FINGERTRACKING hand data in one tracking data packet.
  */
 bool DTrackParser::parseLine_gl(char **line)
 {
@@ -773,15 +745,18 @@ bool DTrackParser::parseLine_gl(char **line)
 		act_hand[i].id = i;
 		act_hand[i].quality = -1;
 	}
+
 	// get number of hands (in line)
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// get data of hands
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "idii", iarr, NULL, &d))){
+		*line = string_get_block( *line, "idii", iarr, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		id = iarr[0];
 		if (id >= act_num_hand) {  // adjust length of vector
 			act_hand.resize(id + 1);
@@ -799,24 +774,29 @@ bool DTrackParser::parseLine_gl(char **line)
 			return false;
 		}
 		act_hand[id].nfinger = iarr[2];
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_hand[id].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_hand[ id ].loc );
+		if ( *line == NULL )
 			return false;
-			
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_hand[id].rot))){
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_hand[ id ].rot );
+		if ( *line == NULL )
 			return false;
-		}
+
 		// get data of fingers
 		for (j = 0; j < act_hand[id].nfinger; j++) {
-			if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_hand[id].finger[j].loc))) {
+			*line = string_get_block( *line, "ddd", NULL, NULL, act_hand[ id ].finger[ j ].loc );
+			if ( *line == NULL )
 				return false;
-			}
-			if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_hand[id].finger[j].rot))){
+
+			*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_hand[ id ].finger[ j ].rot );
+			if ( *line == NULL )
 				return false;
-			}
-			if (!(*line = string_get_block(*line, "dddddd", NULL, NULL, darr))){
+
+			*line = string_get_block( *line, "dddddd", NULL, NULL, darr );
+			if ( *line == NULL )
 				return false;
-			}
+
 			act_hand[id].finger[j].radiustip = darr[0];
 			act_hand[id].finger[j].lengthphalanx[0] = darr[1];
 			act_hand[id].finger[j].anglephalanx[0] = darr[2];
@@ -830,23 +810,19 @@ bool DTrackParser::parseLine_gl(char **line)
 }
 
 
-/**
- * 	\brief Parses a single line of 6dj human model data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6dj' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of ART-Human model data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6dj(char **line)
 {
 	int i, j, n, iarr[2], id;
 	double d, darr[6];
-	
+
 	// get number of calibrated human models
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// adjust length of vector
 	if(n != act_num_human){
 		act_human.resize(n);
@@ -857,16 +833,18 @@ bool DTrackParser::parseLine_6dj(char **line)
 		act_human[i].id = i;
 		act_human[i].num_joints = 0;
 	}
-	
+
 	// get number of human models
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	int id_human;
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "ii", iarr, NULL,NULL))){
+		*line = string_get_block( *line, "ii", iarr, NULL,NULL );
+		if ( *line == NULL )
 			return false;
-		}
+
 		if (iarr[0] > act_num_human - 1) // not expected
 			return false;
 		
@@ -875,35 +853,32 @@ bool DTrackParser::parseLine_6dj(char **line)
 		act_human[id_human].num_joints = iarr[1];
 		
 		for (j = 0; j < iarr[1]; j++){
-			if (!(*line = string_get_block(*line, "id", &id, NULL, &d))){
+			*line = string_get_block( *line, "id", &id, NULL, &d );
+			if ( *line == NULL )
 				return false;
-			}
+
 			act_human[id_human].joint[j].id = id;
 			act_human[id_human].joint[j].quality = d;
-			
-			if (!(*line = string_get_block(*line, "dddddd", NULL, NULL, darr))){
+
+			*line = string_get_block( *line, "dddddd", NULL, NULL, darr );
+			if ( *line == NULL )
 				return false;
-			}
+
 			memcpy(act_human[id_human].joint[j].loc, &darr,  3*sizeof(double));
 			memcpy(act_human[id_human].joint[j].ang, &darr[3],  3*sizeof(double));
-			
-			if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_human[id_human].joint[j].rot))){
+
+			*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_human[ id_human ].joint[ j ].rot );
+			if ( *line == NULL )
 				return false;
-			}
 		}
 	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of 6di inertial data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '6di' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of hybrid (optical-inertial) body data in one tracking data packet.
  */
 bool DTrackParser::parseLine_6di(char **line)
 {
@@ -917,15 +892,18 @@ bool DTrackParser::parseLine_6di(char **line)
 		act_inertial[i].st = 0;
 		act_inertial[i].error = 0;
 	}
+
 	// get number of calibrated inertial bodies
-	if (!(*line = string_get_i(*line, &n))) {
+	*line = string_get_i( *line, &n );
+	if ( *line == NULL )
 		return false;
-	}
+
 	// get data of inertial bodies
 	for (i=0; i<n; i++) {
-		if (!(*line = string_get_block(*line, "iid", iarr, NULL, &d))){
+		*line = string_get_block( *line, "iid", iarr, NULL, &d );
+		if ( *line == NULL )
 			return false;
-		}
+
 		id = iarr[0];
 		st = iarr[1];
 		// adjust length of vector
@@ -942,57 +920,55 @@ bool DTrackParser::parseLine_6di(char **line)
 		act_inertial[id].id = id;
 		act_inertial[id].st = st;
 		act_inertial[id].error = d;
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_inertial[id].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_inertial[ id ].loc );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddddddddd", NULL, NULL, act_inertial[id].rot))) {
+
+		*line = string_get_block( *line, "ddddddddd", NULL, NULL, act_inertial[ id ].rot );
+		if ( *line == NULL )
 			return false;
-		}
 	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief Parses a single line of single marker data in one tracking data packet.
- *
- *	Updates internal data structures.
- *
- *	@param[in,out]  line		line of '3d' data in one tracking data packet
- *	@return	Parsing succeeded?
+/*
+ * Parses a single line of single marker data in one tracking data packet.
  */
 bool DTrackParser::parseLine_3d(char **line)
 {
 	int i;
-	
+
 	// get number of markers
-	if (!(*line = string_get_i(*line, &act_num_marker))) {
+	*line = string_get_i( *line, &act_num_marker );
+	if ( *line == NULL )
+	{
 		act_num_marker = 0;
 		return false;
 	}
 	if (act_num_marker > (int )act_marker.size()) {
 		act_marker.resize(act_num_marker);
 	}
+
 	// get data of single markers
 	for (i=0; i<act_num_marker; i++) {
-		if (!(*line = string_get_block(*line, "id", &act_marker[i].id, NULL, &act_marker[i].quality))) {
+		*line = string_get_block( *line, "id", &act_marker[ i ].id, NULL, &act_marker[ i ].quality );
+		if ( *line == NULL )
 			return false;
-		}
-		if (!(*line = string_get_block(*line, "ddd", NULL, NULL, act_marker[i].loc))) {
+
+		*line = string_get_block( *line, "ddd", NULL, NULL, act_marker[ i ].loc );
+		if ( *line == NULL )
 			return false;
-		}
 	}
-	
+
 	return true;
 }
 
 
-/**
- * 	\brief	Get number of calibrated standard bodies (as far as known).
- *
- *	Refers to last received frame.
- *	@return		number of calibrated standard bodies
+/*
+ * Get number of calibrated standard bodies (as far as known).
  */
 int DTrackParser::getNumBody() const
 {
@@ -1000,14 +976,10 @@ int DTrackParser::getNumBody() const
 }
 
 
-/**
- * 	\brief	Get standard body data
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	id	id, range 0 .. (max standard body id - 1)
- *	@return		id-th standard body data
+/*
+ * Get standard body data.
  */
-const DTrack_Body_Type_d* DTrackParser::getBody(int id) const
+const DTrackBody* DTrackParser::getBody( int id ) const
 {
 	if ((id >= 0) && (id < act_num_body))
 		return &act_body.at(id);
@@ -1015,11 +987,8 @@ const DTrack_Body_Type_d* DTrackParser::getBody(int id) const
 }
 
 
-/**
- * 	\brief	Get number of calibrated Flysticks.
- *
- *	Refers to last received frame.
- *	@return		number of calibrated Flysticks
+/*
+ * Get number of calibrated Flysticks.
  */
 int DTrackParser::getNumFlyStick() const
 {
@@ -1027,14 +996,10 @@ int DTrackParser::getNumFlyStick() const
 }
 
 
-/**
- * 	\brief	Get Flystick data.
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	id	id, range 0 .. (max flystick id - 1)
- *	@return		id-th Flystick data.
+/*
+ * Get Flystick data.
  */
-const DTrack_FlyStick_Type_d* DTrackParser::getFlyStick(int id) const
+const DTrackFlyStick* DTrackParser::getFlyStick( int id ) const
 {
 	if ((id >= 0) && (id < act_num_flystick))
 		return &act_flystick.at(id);
@@ -1042,11 +1007,8 @@ const DTrack_FlyStick_Type_d* DTrackParser::getFlyStick(int id) const
 }
 
 
-/**
- * 	\brief	Get number of calibrated measurement tools.
- *
- *	Refers to last received frame.
- *	@return		number of calibrated measurement tools
+/*
+ * Get number of calibrated Measurement Tools.
  */
 int DTrackParser::getNumMeaTool() const
 {
@@ -1054,14 +1016,10 @@ int DTrackParser::getNumMeaTool() const
 }
 
 
-/**
- * 	\brief	Get measurement tool data.
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	id	id, range 0 .. (max tool id - 1)
- *	@return		id-th measurement tool data.
+/*
+ * Get Measurement Tool data.
  */
-const DTrack_MeaTool_Type_d* DTrackParser::getMeaTool(int id) const
+const DTrackMeaTool* DTrackParser::getMeaTool( int id ) const
 {
 	if ((id >= 0) && (id < act_num_meatool))
 		return &act_meatool.at(id);
@@ -1069,11 +1027,8 @@ const DTrack_MeaTool_Type_d* DTrackParser::getMeaTool(int id) const
 }
 
 
-/**
- * 	\brief	Get number of calibrated measurement references.
- *
- *	Refers to last received frame.
- *	@return		number of calibrated measurement references
+/*
+ * Get number of calibrated Measurement Tool references.
  */
 int DTrackParser::getNumMeaRef() const
 {
@@ -1081,14 +1036,10 @@ int DTrackParser::getNumMeaRef() const
 }
 
 
-/**
- * 	\brief	Get measurement reference data.
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	id	id, range 0 .. (max measurement reference id - 1)
- *	@return		id-th measurement reference data.
+/*
+ * Get Measurement Tool reference data.
  */
-const DTrack_MeaRef_Type_d* DTrackParser::getMeaRef(int id) const
+const DTrackMeaRef* DTrackParser::getMeaRef( int id ) const
 {
 	if ((id >= 0) && (id < act_num_mearef))
 		return &act_mearef.at(id);
@@ -1096,11 +1047,8 @@ const DTrack_MeaRef_Type_d* DTrackParser::getMeaRef(int id) const
 }
 
 
-/**
- * 	\brief	Get number of calibrated Fingertracking hands (as far as known).
- *
- *	Refers to last received frame.
- *	@return		number of calibrated fingertracking hands
+/*
+ * Get number of calibrated A.R.T. FINGERTRACKING hands (as far as known).
  */
 int DTrackParser::getNumHand() const
 {
@@ -1108,14 +1056,10 @@ int DTrackParser::getNumHand() const
 }
 
 
-/**
- * 	\brief	Get Fingertracking hand data.
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	id	id, range 0 .. (max hand id - 1)
- *	@return		id-th Fingertracking hand data
+/*
+ * Get A.R.T. FINGERTRACKING hand data.
  */
-const DTrack_Hand_Type_d* DTrackParser::getHand(int id) const
+const DTrackHand* DTrackParser::getHand( int id ) const
 {
 	if ((id >= 0) && (id < act_num_hand))
 		return &act_hand.at(id);
@@ -1123,26 +1067,19 @@ const DTrack_Hand_Type_d* DTrackParser::getHand(int id) const
 }
 
 
-/**
-* 	\brief	Get human data
-*
-*	Refers to last received frame. Currently not tracked human models get a num_joints 0
-*	@return		  id-th human model data
-*/
+/*
+ * Get number of calibrated ART-Human models.
+ */
 int DTrackParser::getNumHuman() const
 {
 	return act_num_human;
 }
 
 
-/**
-* 	\brief	Get human data
-*
-*	Refers to last received frame. Currently not tracked human models get a num_joints 0
-*	@param[in]	id	id, range 0 .. (max standard body id - 1)
-*	@return		id-th human model data
-*/
-const DTrack_Human_Type_d* DTrackParser::getHuman(int id) const
+/*
+ * Get ART-Human model data.
+ */
+const DTrackHuman* DTrackParser::getHuman( int id ) const
 {
 	if ((id >= 0) && (id < act_num_human))
 		return &act_human.at(id);
@@ -1150,26 +1087,19 @@ const DTrack_Human_Type_d* DTrackParser::getHuman(int id) const
 }
 
 
-/**
-* 	\brief	Get number of calibrated inertial bodies
-*
-*	Refers to last received frame.
-*	@return		number of calibrated inertial bodies
-*/
+/*
+ * Get number of calibrated hybrid (optical-inertial) bodies.
+ */
 int DTrackParser::getNumInertial() const
 {
 	return act_num_inertial;
 }
 
 
-/**
-* 	\brief	Get i data
-*
-*	Refers to last received frame. Currently not tracked inertial body get a state of 0
-*	@param[in]	id	id, range 0 .. (max inertial body id - 1)
-*	@return		id-th inertial body data
+/*
+ * Get hybrid (optical-inertial) data.
 */
-const DTrack_Inertial_Type_d* DTrackParser::getInertial(int id) const
+const DTrackInertial* DTrackParser::getInertial( int id ) const
 {
 	if((id >=0) && (id < act_num_inertial))
 		return &act_inertial.at(id);
@@ -1177,11 +1107,8 @@ const DTrack_Inertial_Type_d* DTrackParser::getInertial(int id) const
 }
 
 
-/**
- * 	\brief	Get number of tracked single markers.
- *
- *	Refers to last received frame.
- *	@return	number of tracked single markers
+/*
+ * Get number of tracked single markers.
  */
 int DTrackParser::getNumMarker() const
 {
@@ -1189,14 +1116,10 @@ int DTrackParser::getNumMarker() const
 }
 
 
-/**
- * 	\brief	Get single marker data.
- *
- *	Refers to last received frame. Currently not tracked bodies get a quality of -1.
- *	@param[in]	index	index, range 0 .. (max marker id - 1)
- *	@return		i-th single marker data
+/*
+ * Get single marker data.
  */
-const DTrack_Marker_Type_d* DTrackParser::getMarker(int index) const
+const DTrackMarker* DTrackParser::getMarker( int index ) const
 {
 	if ((index >= 0) && (index < act_num_marker))
 		return &act_marker.at(index);
@@ -1204,11 +1127,8 @@ const DTrack_Marker_Type_d* DTrackParser::getMarker(int index) const
 }
 
 
-/**
- * 	\brief	Get frame counter.
- *
- *	Refers to last received frame.
- *	@return		frame counter
+/*
+ * Get frame counter.
  */
 unsigned int DTrackParser::getFrameCounter() const
 {
@@ -1216,13 +1136,11 @@ unsigned int DTrackParser::getFrameCounter() const
 }
 
 
-/**
- * 	\brief	Get timestamp.
- *
- *	Refers to last received frame.
- *	@return		timestamp (-1 if information not available)
+/*
+ * Get timestamp.
  */
 double DTrackParser::getTimeStamp() const
 {
 	return act_timestamp;
 }
+

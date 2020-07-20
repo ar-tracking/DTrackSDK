@@ -1,9 +1,9 @@
 /* DTrack2CLI (C++), A.R.T. GmbH
  *
  * DTrack2CLI:
- *    C++ based Command Line Interface for DTrack2
+ *    C++ based Command Line Interface for DTrack2 or DTrack3
  *
- * Copyright (c) 2016-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2016-2020, Advanced Realtime Tracking GmbH
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,8 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Purpose:
- *  - Command Line Interface for DTrack2:
- *	   processes DTrack2 commands from command line or read from files
+ *  - Command Line Interface for DTrack2 or DTrack3:
+ *	   processes DTrack2/3 commands from command line or read from files
  *
  */
 
@@ -74,10 +74,10 @@ static void dtrack2_get_and_print_all_event_messages()
 
 
 /**
-*	\brief Checks if DTrack2 backend returned an error and prints it
+*	\brief Checks if DTrack2/3 backend returned an error and prints it
 *	
-*	Checks for error received from DTrack2 and prints it,
-*	makes sure DTrack2CLI displays the same error number as DTrack2 backend.
+*	Checks for error received from DTrack2/3 and prints it,
+*	makes sure DTrack2CLI displays the same error number as DTrack2/3 backend.
 *	Also prints all event messages if an error appeared.
 */
 static int dtrack2_error_to_console()
@@ -107,10 +107,10 @@ static void show_help( const std::string& programName )
 	std::cout << "  -meastart                   start measurement" << std::endl;
 	std::cout << "  -meastop                    stop measurement" << std::endl;
 	std::cout << "  -shutdown                   shut down the ART Controller" << std::endl;
-	std::cout << "  -get <parameter>            read and display the value of a DTrack2 parameter" << std::endl;
-	std::cout << "  -set <parameter> <value>    change the value of a DTrack2 parameter" << std::endl;
+	std::cout << "  -get <parameter>            read and display the value of a DTrack2/3 parameter" << std::endl;
+	std::cout << "  -set <parameter> <value>    change the value of a DTrack2/3 parameter" << std::endl;
 	std::cout << "  -cmd <dtrack2 command>      send DTrack2 command directly" << std::endl;
-	std::cout << "  -f <filename>               read and execute DTrack2 commands from a file" << std::endl;
+	std::cout << "  -f <filename>               read and execute DTrack2/3 commands from a file" << std::endl;
 	std::cout << "  -h, --help, /?              display this help" << std::endl;
 }
 
@@ -550,6 +550,7 @@ int main( int argc, char** argv )
 	{
 		std::cerr << "No connection to ART controller! Is \"" << argv[ 1 ] << 
 		             "\" a valid controller hostname of ip address?" << std::endl;
+		delete dt;
 		return ERR_DTRACKSDK_INIT;
 	}
 
@@ -572,7 +573,10 @@ int main( int argc, char** argv )
 		}
 
 		if ( firstErrorInPipe != 0 )
+		{
+			delete dt;
 			return firstErrorInPipe;
+		}
 	}
 	// runs DTrack2CLI with entered commands
 	else
@@ -580,12 +584,21 @@ int main( int argc, char** argv )
 		// check input parameters
 		int paramInputError = checkInput( argc, argv );
 		if ( paramInputError )
+		{
+			delete dt;
 			return paramInputError;
+		}
 
 		// processes all commands
 		int someError = process_cmd_line_input( argc, argv );
 		if ( someError )
+		{
+			delete dt;
 			return someError;
+		}
 	}
+
+	delete dt;
 	return 0;
 }
+
