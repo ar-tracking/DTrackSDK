@@ -1,8 +1,8 @@
 /* DTrackSDK: C++ example
  *
- * C++ example using Flystick to control a tactile FINGERTRACKING device
+ * C++ example to control a Flystick with feedback
  *
- * Copyright (c) 2020-2021 Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2021 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,84 +31,39 @@
  *  - example with or without DTrack2/DTrack3 remote commands
  *  - in communicating mode: starts measurement, collects some frames and stops measurement again
  *  - in listening mode: please start measurement manually e.g. in DTrack frontend application
- *  - uses a Flystick to control an ART tactile FINGERTRACKING device
- *  - for DTrackSDK v2.6.0 (or newer)
- *
- * NOTE: link with 'winmm.lib' if compiling under Windows
+ *  - for DTrackSDK v2.7.0 (or newer)
  */
-
-#include <cmath>
 
 #include "DTrackSDK.hpp"
 
 #include <iostream>
 #include <sstream>
 
-// usually the following should work; otherwise define OS_* manually:
-#if defined( _WIN32 ) || defined( WIN32 ) || defined( _WIN64 )
-	#define OS_WIN   // for MS Windows
-#else
-	#define OS_UNIX  // for Unix (Linux)
-#endif
-
-#if defined( OS_WIN )
-	#include <windows.h>
-#endif
-#if defined( OS_UNIX )
-	#include <time.h>
-#endif
-
 // global DTrackSDK
 static DTrackSDK* dt = NULL;
 
-static const int NUMBER_OF_FINGERS = 3;  // for 3 fingers
-static std::vector< double > strength( NUMBER_OF_FINGERS, 0.0 );
-
-static const unsigned int REPEAT_PERIOD = 1000;  // period (in milliseconds) to repeat tactile command
-static unsigned int lastTimeMs;
+static bool sentFeedback = false;
 
 // prototypes
-static bool doTactile( int flystickId, int handId );
+static bool doFeedback( int flystickId );
 static bool data_error_to_console();
 static void messages_to_console();
-static unsigned int getTimeMs();
 
 
 /**
  * \brief Main.
  *
- * Control the tactile FINGERTRACKING device using the Flystick:
- * <li>Upper buttons set feedback for a finger with fixed strength,
- * <li>Joystick creates feedback for one or two fingers with variable strength,
+ * Control the Flystick feedback using the Flystick itself:
+ * <li>Upper buttons start vibration pattern,
+ * <li>Joystick button starts a beep with variable duration and frequency,
  * <li>Pressing the trigger button stops the program.
  */
 int main( int argc, char** argv )
 {
-	if ( argc != 4 )
+	if ( argc != 2 )
 	{
-		std::cout << "Usage: example_tactile_flystick [<server host/ip>:]<data port> <Flystick id> <hand id>" << std::endl;
+		std::cout << "Usage: example_flystick_feedback [<server host/ip>:]<data port>" << std::endl;
 		return -1;
-	}
-
-	std::istringstream is( argv[ 2 ] );
-	int flystickId;
-	is >> flystickId;  // Flystick id, range 0 ..
-
-	if ( is.fail() || ( flystickId < 0 ) )
-	{
-		std::cout << "invalid Flystick ID '" << argv[ 2 ] << "'" << std::endl;
-		return -2;
-	}
-
-	is.clear();
-	is.str( argv[ 3 ] );
-	int handId;
-	is >> handId;  // hand id, range 0 ..
-
-	if ( is.fail() || ( handId < 0 ) )
-	{
-		std::cout << "invalid hand id '" << argv[ 3 ] << "'" << std::endl;
-		return -2;
 	}
 
 	// initialization:
@@ -143,8 +98,6 @@ int main( int argc, char** argv )
 		}
 	}
 
-	lastTimeMs = getTimeMs();
-
 	// measurement:
 
 	if ( dt->isCommandInterfaceValid() )
@@ -160,20 +113,30 @@ int main( int argc, char** argv )
 	}
 
 	int count = 0;
-	while ( true )  // collect frames
+	bool isRunning = true;
+	while ( isRunning )  // collect frames
 	{
 		count++;
 
 		if ( dt->receive() )
 		{
-			if ( flystickId >= dt->getNumFlyStick() || handId >= dt->getNumHand() )
+			int nfly = 0;
+			for ( int id = 0; id < dt->getNumFlyStick(); id++ )
 			{
-				std::cout << "Flystick ID or Hand ID doesn't exist!" << std::endl;
-				break;
+				if ( ( dt->getFlyStick( id )->num_button >= 8 ) && ( dt->getFlyStick( id )->num_joystick >= 2 ) )
+				{  // demo routine needs at least 8 buttons and 2 joystick values (e.g. Flystick2+)
+					nfly++;
+
+					if ( ! doFeedback( id ) )
+						isRunning = false;
+				}
 			}
 
-			if ( ! doTactile( flystickId, handId ) )
-				break;
+			if ( nfly == 0 )
+			{
+				std::cout << "No suitable Flystick identified!" << std::endl;
+				isRunning = false;
+			}
 		}
 		else
 		{
@@ -184,8 +147,6 @@ int main( int argc, char** argv )
 		if ( ( count % 100 == 1 ) && dt->isCommandInterfaceValid() )
 			messages_to_console();
 	}
-
-	dt->tactileHandOff( handId, NUMBER_OF_FINGERS );
 
 	if ( dt->isCommandInterfaceValid() )
 	{
@@ -199,13 +160,12 @@ int main( int argc, char** argv )
 
 
 /**
- * \brief Process a frame and control tactile feedback device.
+ * \brief Process a frame and control Flystick feedback.
  *
  * @param[in] flystickId Id of Flystick
- * @param[in] handId     Id of ART tactile feedback device
  * @return               Continue measurement?
  */
-static bool doTactile( int flystickId, int handId )
+static bool doFeedback( int flystickId )
 {
 	const DTrackFlyStick* fly = dt->getFlyStick( flystickId );
 	if ( fly == NULL )
@@ -217,57 +177,40 @@ static bool doTactile( int flystickId, int handId )
 	if ( fly->button[ 0 ] != 0 )  // stop program if trigger button is pressed
 		return false;
 
-	// get new feedback strengths:
+	// get beep feedback:
 
-	std::vector< double > newStrength( NUMBER_OF_FINGERS, 0.0 );
-
-	for ( int i = 0; i < NUMBER_OF_FINGERS; i++ )
+	if ( fly->button[ 5 ] != 0 )  // joystick button of Flystick2+
 	{
-		if ( fly->button[ i + 1 ] != 0 )  // fixed strength if pressing upper buttons
-			newStrength[ i ] = 0.5;
+		double beepDuration = 500.0 + fly->joystick[ 0 ] * 450.0;     // range 50 .. 950 ms
+		double beepFrequency = 5000.0 + fly->joystick[ 1 ] * 3000.0;  // range 2000 .. 8000 Hz
+
+		if ( ! sentFeedback )  // prevents permanent sending of feedback commands as long as button is pressed
+			dt->flystickBeep( flystickId, beepDuration, beepFrequency );
+
+		sentFeedback = true;
+		return true;
 	}
 
-	double joy = fly->joystick[ 0 ];
-	if ( joy > 0.0 )  // variable strength if using joystick
-	{
-		newStrength[ 0 ] = joy;
-	}
-	else if ( joy < 0.0 )
-	{
-		newStrength[ 2 ] = -joy;
-	}
+	// get vibration feedback:
 
-	joy = fly->joystick[ 1 ];
-	if ( joy > 0.0 )
-	{
-		newStrength[ 1 ] = joy;
-	}
+	int vibrationPattern = 0;  // Flystick2+ supports up to 6 vibration pattern
+	if ( fly->button[ 1 ] != 0 )  vibrationPattern = 1;
+	if ( fly->button[ 2 ] != 0 )  vibrationPattern = 2;
+	if ( fly->button[ 3 ] != 0 )  vibrationPattern = 3;
+	if ( fly->button[ 4 ] != 0 )  vibrationPattern = 4;
+	if ( fly->button[ 6 ] != 0 )  vibrationPattern = 5;  // button '5' (joystick button) is already used
+	if ( fly->button[ 7 ] != 0 )  vibrationPattern = 6;
 
-	// check if sending of tactile command is necessary:
-
-	bool dosend = false;
-	for ( int i = 0; i < NUMBER_OF_FINGERS; i++ )
+	if ( vibrationPattern > 0 )
 	{
-		if ( fabs( newStrength[ i ] - strength[ i ] ) >= 0.01 )
-		{
-			strength[ i ] = newStrength[ i ];
-			dosend = true;
-		}
+		if ( ! sentFeedback )  // prevents permanent sending of feedback commands as long as button is pressed
+			dt->flystickVibration( flystickId, vibrationPattern );
+
+		sentFeedback = true;
+		return true;
 	}
 
-	unsigned int timeMs = getTimeMs();
-	if ( timeMs - lastTimeMs >= REPEAT_PERIOD )  // repeat tactile command
-		dosend = true;
-
-	// send tactile command:
-
-	if ( dosend )
-	{
-		dt->tactileHand( handId, strength );
-
-		lastTimeMs = timeMs;
-	}
-
+	sentFeedback = false;
 	return true;
 }
 
@@ -330,25 +273,5 @@ static void messages_to_console()
 	{
 		std::cout << "ATC message: \"" << dt->getMessageStatus() << "\" \"" << dt->getMessageMsg() << "\"" << std::endl;
 	}
-}
-
-
-/**
- * \brief Gets current time.
- *
- * @return system time (in milliseconds)
- */
-static unsigned int getTimeMs()
-{
-#if defined( OS_WIN )
-	return (unsigned int )timeGetTime();
-#endif
-#if defined( OS_UNIX )
-	struct timespec ts;
-	
-	clock_gettime( CLOCK_MONOTONIC, &ts );
-
-	return (unsigned int )ts.tv_sec * 1000u + (unsigned int )ts.tv_nsec / 1000000u;
-#endif
 }
 

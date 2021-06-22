@@ -1,4 +1,4 @@
-Copyright (C) 2007-2020, Advanced Realtime Tracking GmbH
+Copyright (c) 2007-2021, Advanced Realtime Tracking GmbH & Co. KG
 
 Purpose of DTrackSDK
 --------------------
@@ -24,7 +24,7 @@ For more informations about DTrackSDK and how to build and use it refer to
 Company details
 ---------------
 
-Advanced Realtime Tracking GmbH
+Advanced Realtime Tracking GmbH & Co. KG
 Am Oeferl 6
 D-82362 Weilheim
 Germany

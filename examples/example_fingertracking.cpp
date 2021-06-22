@@ -1,8 +1,8 @@
-/* DTrackSDK: C++ example, A.R.T. GmbH
+/* DTrackSDK: C++ example
  *
  * C++ example using DTrackSDK FINGERTRACKING data
  *
- * Copyright (c) 2013-2020, Advanced Realtime Tracking GmbH
+ * Copyright 2013-2021, Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,12 +27,11 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.6.0
- *
  * Purpose:
  *  - example without DTrack2/DTrack3 remote commands: just collects frames
  *  - output of various calculated FINGERTRACKING data
  *  - please start measurement manually e.g. in DTrack frontend application
+ *  - for DTrackSDK v2.6.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"

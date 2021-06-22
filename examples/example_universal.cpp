@@ -1,8 +1,8 @@
-/* DTrackSDK: C++ example, A.R.T. GmbH
+/* DTrackSDK: C++ example
  *
  * C++ example using universal DTrackSDK constructor for all modes
  *
- * Copyright (c) 2019-2020, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2019-2021 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,11 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.6.0
- *
  * Purpose:
- *  - example with or without DTrack2/DTrack3 remote commands:
- *    starts Controller (if possible), collects some frames and stops Controller again
+ *  - example with or without DTrack2/DTrack3 remote commands
+ *  - in communicating mode: starts measurement, collects some frames and stops measurement again
+ *  - in listening mode: please start measurement manually e.g. in DTrack frontend application
+ *  - for DTrackSDK v2.6.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
@@ -65,13 +65,30 @@ int main( int argc, char** argv )
 	if ( ! dt->isDataInterfaceValid() )
 	{
 		std::cout << "DTrackSDK init error" << std::endl;
+		delete dt;
 		return -3;
 	}
 	std::cout << "connected to ATC '" << argv[ 1 ] << "', listening at local data port " << dt->getDataPort() << std::endl;
 
-//	dt->setCommandTimeoutUS( 30000 );  // NOTE: change here timeout for exchanging commands, if necessary
-//	dt->setDataTimeoutUS( 3000000 );  // NOTE: change here timeout for receiving tracking data, if necessary
-//	dt->setDataBufferSize( 100000 );  // NOTE: change here buffer size for receiving tracking data, if necessary
+//	dt->setCommandTimeoutUS( 30000000 );  // NOTE: change here timeout for exchanging commands, if necessary
+//	dt->setDataTimeoutUS( 3000000 );      // NOTE: change here timeout for receiving tracking data, if necessary
+//	dt->setDataBufferSize( 100000 );      // NOTE: change here buffer size for receiving tracking data, if necessary
+
+	// request some settings:
+
+	if ( dt->isCommandInterfaceValid() )
+	{
+		std::string par;
+		bool isOk = dt->getParam( "system", "access", par );  // ensure full access for DTrack2 commands
+		if ( ( ! isOk ) || ( par.compare( "full" ) != 0 ) )
+		{
+			std::cout << "Full access to ATC required!" << std::endl;  // maybe DTrack2/3 frontend is still connected to ATC
+			data_error_to_console();
+			messages_to_console();
+			delete dt;
+			return -10;
+		}
+	}
 
 	// measurement:
 
@@ -97,6 +114,7 @@ int main( int argc, char** argv )
 		else
 		{
 			data_error_to_console();
+			if ( dt->isCommandInterfaceValid() )  messages_to_console();
 		}
 
 		if ( ( count % 100 == 1 ) && dt->isCommandInterfaceValid() )

@@ -1,9 +1,9 @@
-/* DTrack2CLI (C++), A.R.T. GmbH
+/* DTrack2CLI (C++)
  *
  * DTrack2CLI:
  *    C++ based Command Line Interface for DTrack2 or DTrack3
  *
- * Copyright (c) 2016-2020, Advanced Realtime Tracking GmbH
+ * Copyright 2016-2021, Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,7 +31,7 @@
  * Purpose:
  *  - Command Line Interface for DTrack2 or DTrack3:
  *	   processes DTrack2/3 commands from command line or read from files
- *
+ *  - for DTrackSDK v2.6.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"

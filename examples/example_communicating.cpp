@@ -1,8 +1,8 @@
-/* DTrackSDK: C++ example, A.R.T. GmbH
+/* DTrackSDK: C++ example
  *
  * C++ example using DTrackSDK to control DTrack2/DTrack3 Controller
  *
- * Copyright (c) 2005-2020, Advanced Realtime Tracking GmbH
+ * Copyright 2005-2021, Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,10 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.6.0
- *
  * Purpose:
  *  - example with DTrack2/DTrack3 remote commands:
- *    starts Controller, collects some frames and stops Controller again
+ *    starts measurement, collects some frames and stops measurement again
+ *  - for DTrackSDK v2.6.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
@@ -80,9 +79,9 @@ int main( int argc, char** argv )
 	}
 	std::cout << "connected to ATC '" << argv[ 1 ] << "', listening at local data port " << dt->getDataPort() << std::endl;
 
-//	dt->setCommandTimeoutUS( 30000 );  // NOTE: change here timeout for exchanging commands, if necessary
-//	dt->setDataTimeoutUS( 3000000 );  // NOTE: change here timeout for receiving tracking data, if necessary
-//	dt->setDataBufferSize( 100000 );  // NOTE: change here buffer size for receiving tracking data, if necessary
+//	dt->setCommandTimeoutUS( 30000000 );  // NOTE: change here timeout for exchanging commands, if necessary
+//	dt->setDataTimeoutUS( 3000000 );      // NOTE: change here timeout for receiving tracking data, if necessary
+//	dt->setDataBufferSize( 100000 );      // NOTE: change here buffer size for receiving tracking data, if necessary
 
 	// request some settings:
 
