@@ -1,8 +1,8 @@
-/* DTrackSDK: C++ example
+/* DTrackSDK in C++: example_flystick_feedback.cpp
  *
- * C++ example to control a Flystick with feedback
+ * C++ example to control a Flystick with feedback.
  *
- * Copyright (c) 2021 Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2021-2022 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,10 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Purpose:
- *  - example with or without DTrack2/DTrack3 remote commands
+ *  - example with or without DTrack2/DTRACK3 remote commands
  *  - in communicating mode: starts measurement, collects some frames and stops measurement again
  *  - in listening mode: please start measurement manually e.g. in DTrack frontend application
- *  - for DTrackSDK v2.7.0 (or newer)
+ *  - for DTrackSDK v2.8.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
@@ -82,13 +82,9 @@ int main( int argc, char** argv )
 //	dt->setDataTimeoutUS( 3000000 );      // NOTE: change here timeout for receiving tracking data, if necessary
 //	dt->setDataBufferSize( 100000 );      // NOTE: change here buffer size for receiving tracking data, if necessary
 
-	// request some settings:
-
-	if ( dt->isCommandInterfaceValid() )
+	if ( dt->isCommandInterfaceValid() )  // ensure full access for DTrack2/DTRACK3 commands, if in communicating mode
 	{
-		std::string par;
-		bool isOk = dt->getParam( "system", "access", par );  // ensure full access for DTrack2 commands
-		if ( ( ! isOk ) || ( par.compare( "full" ) != 0 ) )
+		if ( ! dt->isCommandInterfaceFullAccess() )
 		{
 			std::cout << "Full access to ATC required!" << std::endl;  // maybe DTrack2/3 frontend is still connected to ATC
 			data_error_to_console();

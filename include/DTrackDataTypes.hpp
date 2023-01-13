@@ -1,8 +1,8 @@
-/* DTrackDataTypes: C++ header file
+/* DTrackSDK in C++: DTrackDataTypes.hpp
  *
- * DTrackSDK: data type definitions.
+ * Data type definitions.
  *
- * Copyright 2007-2021, Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2007-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,13 +26,12 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Version v2.7.0
- * 
  */
 
 #ifndef _ART_DTRACKSDK_DATATYPES_HPP_
 #define _ART_DTRACKSDK_DATATYPES_HPP_
+
+#include <vector>
 
 namespace DTrackSDK_Datatypes {
 
@@ -62,7 +61,7 @@ DTrackQuaternion rot2quat( const double rot[ 9 ] );
  */
 struct DTrackMarker
 {
-	int id;           //!< Id number (starting with 1)
+	int id;           //!< ID number (starting with 1)
 	double quality;   //!< Quality (0.0 <= qu <= 1.0)
 	double loc[ 3 ];  //!< Location (in [mm])
 };
@@ -352,8 +351,47 @@ struct DTrackHuman
 
 typedef DTrackHuman DTrack_Human_Type_d;  //!< Alias for DTrackHuman. DEPRECATED.
 
+// -----------------------------------------------------------------------------------------------------
+
+/**
+ * \brief Camera status data.
+ *
+ * Note that this struct may be enhanced in future DTrackSDK versions.
+ */
+struct DTrackCameraStatus
+{
+	int idCamera;            //!< ID number of the camera (starting with 0)
+
+	int numReflections;      //!< Number of 2DOF reflections seen by this camera
+	int numReflectionsUsed;  //!< Number of seen 2DOF reflections used for 6DOF tracking
+	int maxIntensity;        //!< Intensity of the brightest pixel (between 0 and 10)
+};
+
+/**
+ * \brief System status data.
+ *
+ * Note that this struct may be enhanced in future DTrackSDK versions.
+ */
+struct DTrackStatus
+{
+	// general status values
+	int numCameras;                //!< Number of cameras
+	int numTrackedBodies;          //!< Number of currently tracked 6DOF bodies
+	int numTrackedMarkers;         //!< Number of currently found additional 3DOF markers
+
+	// message statistics
+	int numCameraErrorMessages;    //!< Number of camera-related error messages (since booting)
+	int numCameraWarningMessages;  //!< Number of camera-related warning messages (since booting)
+	int numOtherErrorMessages;     //!< Number of other error messages (since booting)
+	int numOtherWarningMessages;   //!< Number of other warning messages (since booting)
+	int numInfoMessages;           //!< Number of info messages (since booting)
+
+	// camera status values
+	std::vector< DTrackCameraStatus > cameraStatus;  //!< Camera status
+};
+
 
 }  // namespace DTrackSDK_Datatypes
 
-#endif // _ART_DTRACKSDK_DATATYPES_HPP_
+#endif  // _ART_DTRACKSDK_DATATYPES_HPP_
 

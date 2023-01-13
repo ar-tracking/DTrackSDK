@@ -1,8 +1,9 @@
-/* DTrackSDK: C++ source file, A.R.T. GmbH
+/* DTrackSDK in C++: DTrack.cpp
  *
- * DTrack: functions to receive and process DTrack UDP packets (ASCII protocol)
+ * Wrapper for deprecated SDK 'DTrack' using DTrackSDK:
+ * Functions to receive and process DTrack UDP packets (ASCII protocol).
  *
- * Copyright (c) 2005-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2005-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,14 +28,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.5.0
- *
  * Purpose:
  *  - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
  *  - sends DTrack remote commands (UDP)
  *  - DTrack network protocol due to: 'Technical Appendix DTrack v1.24 (December 19, 2006)'
  *  - for DTrack versions v1.16 - v1.24 (and compatible versions)
- *
+ *  - for DTrackSDK v2.5.0 (or newer)
  */
 
 #include "DTrack.hpp"
@@ -62,7 +61,8 @@ DTrack::DTrack(
 	remoteCameras = false;
 	remoteTracking = true;
 	remoteSending = true;
-	sdk = new DTrackSDK(s, remote_port, data_port, DTrackSDK::SYS_DTRACK_UNKNOWN, data_bufsize, data_timeout_us, data_timeout_us);
+	sdk = new DTrackSDK( s, ( unsigned short )remote_port, ( unsigned short )data_port, DTrackSDK::SYS_DTRACK_UNKNOWN,
+	                     data_bufsize, data_timeout_us, data_timeout_us );
 }
 
 

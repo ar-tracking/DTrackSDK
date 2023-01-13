@@ -1,9 +1,8 @@
-/* DTrackSDK: C++ example, A.R.T. GmbH
+/* DTrackSDK in C++: DTracklib_example_with_remote_control.cpp
  *
- * example_with_remote_control:
- *    C++ example using dtracklib with DTrack remote control
+ * C++ example using 'DTracklib' with DTrack remote control.
  *
- * Copyright (c) 2000-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2000-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,13 +27,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.5.0
- *
  * Purpose:
  *  - example with DTrack remote commands:
  *    starts DTrack, collects frames and stops DTrack again
- *
+ *  - for DTrackSDK v2.5.0 (or newer)
  */
+
 #include "DTracklib.hpp"
 
 #include <iostream>
@@ -183,10 +181,10 @@ int main(int argc, char** argv)
 		cout << "invalid remote port '" << argv[3] << "'" << endl;
 		return -2;
 	}
-	
+
 	// init library:
-	dt = new DTracklib(port, argv[2], rport);
-	
+	dt = new DTracklib( ( unsigned short )port, argv[ 2 ], ( unsigned short )rport );
+
 	if(!dt->valid()){
 		cout << "DTrack init error" << endl;
 		return -3;

@@ -1,8 +1,8 @@
-/* DTrackParser: C++ header file
+/* DTrackSDK in C++: DTrackParser.hpp
  *
- * DTrackSDK: functions to process DTrack UDP packets (ASCII protocol).
+ * Functions to process DTrack UDP packets (ASCII protocol).
  *
- * Copyright 2013-2021, Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2013-2022 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,9 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.7.0
- * 
  * Purpose:
  *  - DTrack network protocol according to:
- *    'DTrack2 User Manual, Technical Appendix' or 'DTrack3 Programmer's Guide'
+ *    'DTrack2 User Manual, Technical Appendix' or 'DTRACK3 Programmer's Guide'
  */
 
 #ifndef _ART_DTRACKSDK_PARSER_HPP_
@@ -252,6 +250,25 @@ public:
 	 */
 	const DTrackMarker* getMarker( int index ) const;
 
+	/**
+	 * \brief Returns if system status data is available.
+	 *
+	 * Refers to last received frame.
+	 *
+	 * @return System status data is available
+	 */
+	bool isStatusAvailable() const;
+
+	/**
+	 * \brief Get system status data.
+	 *
+	 * Refers to last received frame.
+	 *
+	 * @return System status data; NULL in case of error
+	 */
+	const DTrackStatus* getStatus() const;
+
+
 private:
 
 	/**
@@ -402,7 +419,17 @@ private:
 	 * @param[in,out] line Line of '3d' data in one tracking data packet
 	 * @return             Parsing succeeded?
 	 */
-	bool parseLine_3d(char **line);
+	bool parseLine_3d( char **line );
+
+	/**
+	 * \brief Parses a single line of system status data in one tracking data packet.
+	 *
+	 * Updates internal data structures.
+	 *
+	 * @param[in,out] line Line of 'st' data in one tracking data packet
+	 * @return             Parsing succeeded?
+	 */
+	bool parseLine_st( char** line );
 
 private:
 
@@ -424,6 +451,8 @@ private:
 	std::vector< DTrackInertial > act_inertial;       //!< Array containing hybrid (optical-inertial) body data
 	int act_num_marker;                               //!< Number of tracked single markers
 	std::vector< DTrackMarker > act_marker;           //!< Array containing single marker data
+	bool act_is_status_available;                     //!< System status data is available
+	DTrackStatus act_status;                          //!< System status data
 
 	int loc_num_bodycal;    //!< internal use, local number of calibrated bodies
 	int loc_num_handcal;    //!< internal use, local number of hands

@@ -1,12 +1,12 @@
-Copyright (c) 2007-2021, Advanced Realtime Tracking GmbH & Co. KG
+Copyright (c) 2007-2022 Advanced Realtime Tracking GmbH & Co. KG
 
 Purpose of DTrackSDK
 --------------------
 
 A set of functions to provide an interface to A.R.T. tracking systems. It supports
-DTrack(1), DTrack2 and DTrack3. 
+DTrack(1), DTrack2 and DTRACK3. 
 The functions receive and process DTrack measurement data packets (UDP; ASCII),
-and send/exchange DTrack/DTrack2/DTrack3 command strings (UDP/TCP; ASCII).
+and send/exchange DTrack/DTrack2/DTRACK3 command strings (UDP/TCP; ASCII).
 
 License
 -------

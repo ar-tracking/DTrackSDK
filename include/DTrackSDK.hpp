@@ -1,9 +1,9 @@
-/* DTrackSDK: C++ header file
+/* DTrackSDK in C++: DTrackSDK.hpp
  *
- * DTrackSDK: functions to receive and process DTrack UDP packets (ASCII protocol), as
- * well as to exchange DTrack2/DTrack3 TCP command strings.
+ * Functions to receive and process DTrack UDP packets (ASCII protocol), as
+ * well as to exchange DTrack2/DTRACK3 TCP command strings.
  *
- * Copyright (c) 2007-2021 Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2007-2022 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,21 +27,21 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Version v2.7.0
+ *
+ * Version v2.8.0
  *
  * Purpose:
  *  - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
- *  - sends and receives DTrack2/DTrack3 commands (TCP)
+ *  - sends and receives DTrack2/DTRACK3 commands (TCP)
  *  - DTrack network protocol according to:
- *    'DTrack2 User Manual, Technical Appendix' or 'DTrack3 Programmer's Guide'
+ *    'DTrack2 User Manual, Technical Appendix' or 'DTRACK3 Programmer's Guide'
  */
 
 /*! \mainpage DTrackSDK Overview
  *
  * \section intro_sec Introduction
  *
- * The DTrackSDK provides an interface to control a DTrack1/DTrack2/DTrack3 server and to receive tracking data.
+ * The DTrackSDK provides an interface to control a DTrack1/DTrack2/DTRACK3 server and to receive tracking data.
  * Command and data exchange is done through an ASCII protocol.
  *
  * \section content_sec Contents
@@ -84,7 +84,7 @@ public:
 	typedef enum {
 		SYS_DTRACK_UNKNOWN = 0,  //!< Unknown system
 		SYS_DTRACK,              //!< DTrack1 system
-		SYS_DTRACK_2             //!< DTrack2/DTrack3 system
+		SYS_DTRACK_2             //!< DTrack2/DTRACK3 system
 	} RemoteSystemType;
 
 	//! Error codes
@@ -98,7 +98,7 @@ public:
 	/**
 	 * \brief Universal constructor. Can be used for any mode. Recommended for new applications.
 	 *
-	 * Refer to other constructors for details. Communicating mode just for DTrack2/DTrack3.
+	 * Refer to other constructors for details. Communicating mode just for DTrack2/DTRACK3.
 	 *
 	 * Examples for connection string:
 	 * - "5000" : Port number (UDP), use for pure listening mode.
@@ -121,7 +121,7 @@ public:
 	DTrackSDK(unsigned short data_port);
 
 	/**
-	 * \brief Constructor. Use for communicating mode with DTrack2/DTrack3.
+	 * \brief Constructor. Use for communicating mode with DTrack2/DTRACK3.
 	 *
 	 * Using this constructor, a UDP receiver to get tracking data from the
 	 * Controller as well as a TCP connection with the Controller will be
@@ -207,7 +207,7 @@ public:
 	unsigned short getDataPort() const;
 
 	/**
-	 * \brief Returns if TCP connection for DTrack2/DTrack3 commands is active.
+	 * \brief Returns if TCP connection for DTrack2/DTRACK3 commands is active.
 	 *
 	 * @return Command interface is active?
 	 */
@@ -223,7 +223,14 @@ public:
 	bool isTCPValid() const  { return isCommandInterfaceValid(); }
 
 	/**
-	 * \brief Get current remote system type (e.g. DTrack1, DTrack2/DTrack3).
+	 * \brief Returns if TCP connection has full access for DTrack2/DTRACK3 commands.
+	 *
+	 * @return Got full access to command interface?
+	 */
+	bool isCommandInterfaceFullAccess();
+
+	/**
+	 * \brief Get current remote system type (e.g. DTrack1, DTrack2/DTRACK3).
 	 *
 	 * @return Type of remote system
 	 */
@@ -235,7 +242,7 @@ public:
 	 * @param[in] timeout Timeout for receiving tracking data in us; 0 to set default (1.0 s)
 	 * @return            Success? (i.e. valid timeout)
 	 */
-	bool setDataTimeoutUS(int timeout);
+	bool setDataTimeoutUS( int timeout );
 
 	/**
 	 * \brief Set TCP timeout for exchanging commands with Controller.
@@ -307,14 +314,14 @@ public:
 	Errors getLastServerError() const;
 
 	/**
-	 * \brief Get last DTrack2/DTrack3 command error code.
+	 * \brief Get last DTrack2/DTRACK3 command error code.
 	 *
 	 * @return Error code
 	 */
 	int getLastDTrackError() const;
 
 	/**
-	 * \brief Get last DTrack2/DTrack3 command error description.
+	 * \brief Get last DTrack2/DTRACK3 command error description.
 	 *
 	 * @return Error description
 	 */
@@ -359,7 +366,7 @@ public:
 	bool sendCommand( const std::string& command )  { return sendDTrack1Command( command ); }
 
 	/**
-	 * \brief Send DTrack2/DTrack3 command to DTrack and receive answer (TCP command interface).
+	 * \brief Send DTrack2/DTRACK3 command to DTrack and receive answer (TCP command interface).
 	 *
 	 * Answers like "dtrack2 ok" and "dtrack2 err .." are processed. Both cases are reflected in
 	 * the return value. getLastDTrackError() and getLastDTrackErrorDescription() will return more information.
@@ -375,7 +382,7 @@ public:
 	int sendDTrack2Command(const std::string& command, std::string* answer = NULL);
 
 	/**
-	 * \brief Set DTrack2/DTrack3 parameter.
+	 * \brief Set DTrack2/DTRACK3 parameter.
 	 *
 	 * @param[in] category Parameter category
 	 * @param[in] name     Parameter name
@@ -385,7 +392,7 @@ public:
 	bool setParam(const std::string& category, const std::string& name, const std::string& value);
 
 	/**
-	 * \brief Set DTrack2/DTrack3 parameter using a string containing parameter category, name and new value.
+	 * \brief Set DTrack2/DTRACK3 parameter using a string containing parameter category, name and new value.
 	 *
 	 * @param[in] parameter Complete parameter string without starting "dtrack set "
 	 * @return              Success? (if not, a DTrack error message is available)
@@ -393,7 +400,7 @@ public:
 	bool setParam(const std::string& parameter);
 
 	/**
-	 * \brief Get DTrack2/DTrack3 parameter.
+	 * \brief Get DTrack2/DTRACK3 parameter.
 	 *
 	 * @param[in]  category Parameter category
 	 * @param[in]  name     Parameter name
@@ -403,7 +410,7 @@ public:
 	bool getParam(const std::string& category, const std::string& name, std::string& value);
 
 	/**
-	 * \brief Get DTrack2/DTrack3 parameter using a string containing parameter category and name.
+	 * \brief Get DTrack2/DTRACK3 parameter using a string containing parameter category and name.
 	 *
 	 * @param[in]  parameter Complete parameter string without starting "dtrack get "
 	 * @param[out] value     Parameter value
@@ -413,7 +420,7 @@ public:
 
 
 	/**
-	 * \brief Get DTrack2/DTrack3 event message from the Controller.
+	 * \brief Get DTrack2/DTRACK3 event message from the Controller.
 	 *
 	 * Updates internal message structures. Use the appropriate methods to get the contents of the
 	 * message.
@@ -423,35 +430,35 @@ public:
 	bool getMessage();
 
 	/**
-	 * \brief Get frame counter of last DTrack2/DTrack3 event message.
+	 * \brief Get frame counter of last DTrack2/DTRACK3 event message.
 	 *
 	 * @return Frame counter
 	 */
 	unsigned int getMessageFrameNr() const;
 
 	/**
-	 * \brief Get error id of last DTrack2/DTrack3 event message.
+	 * \brief Get error id of last DTrack2/DTRACK3 event message.
 	 *
 	 * @return Error id
 	 */
 	unsigned int getMessageErrorId() const;
 
 	/**
-	 * \brief Get origin of last DTrack2/DTrack3 event message.
+	 * \brief Get origin of last DTrack2/DTRACK3 event message.
 	 *
 	 * @return Origin
 	 */
 	std::string getMessageOrigin() const;
 
 	/**
-	 * \brief Get status of last DTrack2/DTrack3 event message.
+	 * \brief Get status of last DTrack2/DTRACK3 event message.
 	 *
 	 * @return Status
 	 */
 	std::string getMessageStatus() const;
 
 	/**
-	 * \brief Get message text of last DTrack2/DTrack3 event message.
+	 * \brief Get message text of last DTrack2/DTRACK3 event message.
 	 *
 	 * @return Message text
 	 */
@@ -536,7 +543,7 @@ private:
 	static const int DEFAULT_UDP_BUFSIZE = 32768;     //!< default UDP buffer size (in bytes)
 
 	/**
-	 * \brief Set last DTrack2/DTrack3 command error.
+	 * \brief Set last DTrack2/DTRACK3 command error.
 	 *
 	 * @param[in] newError       New error code for last operation; default is 0 (success)
 	 * @param[in] newErrorString Corresponding error string if exists (optional)

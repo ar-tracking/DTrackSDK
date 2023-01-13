@@ -1,8 +1,9 @@
-/* dtracklib: C++ source file, A.R.T. GmbH
+/* DTrackSDK in C++: DTracklib.cpp
  *
- * dtracklib: functions to receive and process DTrack UDP packets (ASCII protocol)
+ * Wrapper for deprecated SDK 'DTracklib' using DTrackSDK:
+ * Functions to receive and process DTrack UDP packets (ASCII protocol).
  *
- * Copyright (c) 2000-2017, Advanced Realtime Tracking GmbH
+ * Copyright (c) 2000-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,14 +28,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.5.0
- *
  * Purpose:
  *   - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
  *   - sends DTrack remote commands (UDP)
  *   - DTrack network protocol due to: 'Technical Appendix DTrack v1.23 (April 6, 2005)'
  *   - for DTrack versions v1.16 - v1.23 (and compatible versions)
- *
+ *  - for DTrackSDK v2.5.0 (or newer)
  */
 
 #include "DTracklib.hpp"
@@ -64,7 +63,8 @@ DTracklib::DTracklib(
 	std::string s = "";
 	if (remote_ip != NULL)
 		s = remote_ip;
-	sdk = new DTrackSDK(s, remote_port, udpport, DTrackSDK::SYS_DTRACK, udpbufsize, udptimeout_us, udptimeout_us);
+
+	sdk = new DTrackSDK( s, remote_port, udpport, DTrackSDK::SYS_DTRACK, udpbufsize, ( int )udptimeout_us, ( int )udptimeout_us );
 	act_nbodycal = -1;
 	act_nbody = act_nflystick = act_nmeatool = act_nmarker = act_nglove = 0;
 }

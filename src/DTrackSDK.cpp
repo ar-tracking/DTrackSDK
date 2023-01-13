@@ -1,9 +1,9 @@
-/* DTrackSDK: C++ source file
+/* DTrackSDK in C++: DTrackSDK.cpp
  *
- * DTrackSDK: functions to receive and process DTrack UDP packets (ASCII protocol), as
- * well as to exchange DTrack2/DTrack3 TCP command strings.
+ * Functions to receive and process DTrack UDP packets (ASCII protocol), as
+ * well as to exchange DTrack2/DTRACK3 TCP command strings.
  *
- * Copyright (c) 2007-2021 Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2007-2022 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,13 +28,13 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.7.0
+ * Version v2.8.0
  *
  * Purpose:
  *  - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
- *  - sends and receives DTrack2/DTrack3 commands (TCP)
+ *  - sends and receives DTrack2/DTRACK3 commands (TCP)
  *  - DTrack network protocol according to:
- *    'DTrack2 User Manual, Technical Appendix' or 'DTrack3 Programmer's Guide'
+ *    'DTrack2 User Manual, Technical Appendix' or 'DTRACK3 Programmer's Guide'
  */
 
 #include <sstream>
@@ -101,7 +101,7 @@ DTrackSDK::DTrackSDK(unsigned short data_port)
 
 
 /*
- * Constructor. Use for communicating mode with DTrack2/DTrack3.
+ * Constructor. Use for communicating mode with DTrack2/DTRACK3.
  */
 DTrackSDK::DTrackSDK(const std::string& server_host, unsigned short data_port)
     : DTrackParser()
@@ -198,10 +198,10 @@ void DTrackSDK::init( const std::string& server_host, unsigned short server_port
 		{
 			d_remoteDT1Port = server_port;
 		}
-		else  // server is DTrack2/DTrack3 or unknown: try TCP connection
+		else  // server is DTrack2/DTRACK3 or unknown: try TCP connection
 		{
 			d_tcp = new DTrackNet::TCP( remoteIp, DTRACK2_PORT_COMMAND );
-			if ( ! d_tcp->isValid() )  // no connection to DTrack2/DTrack3 server
+			if ( ! d_tcp->isValid() )  // no connection to DTrack2/DTRACK3 server
 			{
 				// on error assuming DTrack1 if system is unknown
 				if ( rsType == SYS_DTRACK_UNKNOWN )
@@ -212,7 +212,7 @@ void DTrackSDK::init( const std::string& server_host, unsigned short server_port
 			}
 			else
 			{
-				rsType = SYS_DTRACK_2;  // TCP connection up, should be DTrack2/DTrack3
+				rsType = SYS_DTRACK_2;  // TCP connection up, should be DTrack2/DTRACK3
 			}
 		}
 	}
@@ -261,7 +261,7 @@ unsigned short DTrackSDK::getDataPort() const
 
 
 /*
- * Returns if TCP connection for DTrack2/DTrack3 commands is active.
+ * Returns if TCP connection for DTrack2/DTRACK3 commands is active.
  */
 bool DTrackSDK::isCommandInterfaceValid() const
 {
@@ -272,7 +272,22 @@ bool DTrackSDK::isCommandInterfaceValid() const
 
 
 /*
- * Get current remote system type (e.g. DTrack1, DTrack2/DTrack3).
+ * Returns if TCP connection has full access for DTrack2/DTRACK3 commands.
+ */
+bool DTrackSDK::isCommandInterfaceFullAccess()
+{
+	if ( ! isCommandInterfaceValid() )  return false;
+
+	std::string par;
+	bool isOk = getParam( "system", "access", par );  // ensure full access for DTrack2/DTRACK3 commands
+	if ( ( ! isOk ) || ( par.compare( "full" ) != 0 ) )  return false;
+
+	return true;
+}
+
+
+/*
+ * Get current remote system type (e.g. DTrack1, DTrack2/DTRACK3).
  */
 DTrackSDK::RemoteSystemType DTrackSDK::getRemoteSystemType() const
 {
@@ -467,7 +482,7 @@ DTrackSDK::Errors DTrackSDK::getLastServerError() const
 
 
 /*
- * Get last DTrack2/DTrack3 command error code.
+ * Get last DTrack2/DTRACK3 command error code.
  */
 int DTrackSDK::getLastDTrackError() const
 {
@@ -476,7 +491,7 @@ int DTrackSDK::getLastDTrackError() const
 
 
 /*
- * Get last DTrack2/DTrack3 command error description.
+ * Get last DTrack2/DTRACK3 command error description.
  */
 std::string DTrackSDK::getLastDTrackErrorDescription() const
 {
@@ -485,7 +500,7 @@ std::string DTrackSDK::getLastDTrackErrorDescription() const
 
 
 /*
- * Set last DTrack2/DTrack3 command error.
+ * Set last DTrack2/DTRACK3 command error.
  */
 void DTrackSDK::setLastDTrackError(int newError, const std::string& newErrorString)
 {
@@ -583,7 +598,7 @@ bool DTrackSDK::sendDTrack1Command( const std::string& command )
 
 
 /*
- * Send DTrack2/DTrack3 command to DTrack and receive answer (TCP command interface).
+ * Send DTrack2/DTRACK3 command to DTrack and receive answer (TCP command interface).
  */
 int DTrackSDK::sendDTrack2Command(const std::string& command, std::string* answer)
 {
@@ -680,7 +695,7 @@ int DTrackSDK::sendDTrack2Command(const std::string& command, std::string* answe
 
 
 /*
- * Set DTrack2/DTrack3 parameter.
+ * Set DTrack2/DTRACK3 parameter.
  */
 bool DTrackSDK::setParam(const std::string& category, const std::string& name, const std::string& value)
 {
@@ -689,7 +704,7 @@ bool DTrackSDK::setParam(const std::string& category, const std::string& name, c
 
 
 /*
- * Set DTrack2/DTrack3 parameter using a string containing parameter category, name and new value.
+ * Set DTrack2/DTRACK3 parameter using a string containing parameter category, name and new value.
  */
 bool DTrackSDK::setParam(const std::string& parameter)
 {
@@ -699,7 +714,7 @@ bool DTrackSDK::setParam(const std::string& parameter)
 
 
 /*
- * Get DTrack2/DTrack3 parameter.
+ * Get DTrack2/DTRACK3 parameter.
  */
 bool DTrackSDK::getParam(const std::string& category, const std::string& name, std::string& value)
 {
@@ -708,7 +723,7 @@ bool DTrackSDK::getParam(const std::string& category, const std::string& name, s
 
 
 /*
- * Get DTrack2/DTrack3 parameter using a string containing parameter category and name.
+ * Get DTrack2/DTRACK3 parameter using a string containing parameter category and name.
  */
 bool DTrackSDK::getParam(const std::string& parameter, std::string& value)
 {
@@ -745,7 +760,7 @@ bool DTrackSDK::getParam(const std::string& parameter, std::string& value)
 
 
 /*
- * Get DTrack2/DTrack3 event message from the Controller.
+ * Get DTrack2/DTRACK3 event message from the Controller.
  */
 bool DTrackSDK::getMessage()
 {
@@ -803,7 +818,7 @@ bool DTrackSDK::getMessage()
 
 
 /*
- * Get frame counter of last DTrack2/DTrack3 event message.
+ * Get frame counter of last DTrack2/DTRACK3 event message.
  */
 unsigned int DTrackSDK::getMessageFrameNr() const
 {
@@ -812,7 +827,7 @@ unsigned int DTrackSDK::getMessageFrameNr() const
 
 
 /*
- * Get error id of last DTrack2/DTrack3 event message.
+ * Get error id of last DTrack2/DTRACK3 event message.
  */
 unsigned int DTrackSDK::getMessageErrorId() const
 {
@@ -821,7 +836,7 @@ unsigned int DTrackSDK::getMessageErrorId() const
 
 
 /*
- * Get origin of last DTrack2/DTrack3 event message.
+ * Get origin of last DTrack2/DTRACK3 event message.
  */
 std::string DTrackSDK::getMessageOrigin() const
 {
@@ -830,7 +845,7 @@ std::string DTrackSDK::getMessageOrigin() const
 
 
 /*
- * Get status of last DTrack2/DTrack3 event message.
+ * Get status of last DTrack2/DTRACK3 event message.
  */
 std::string DTrackSDK::getMessageStatus() const
 {
@@ -839,7 +854,7 @@ std::string DTrackSDK::getMessageStatus() const
 
 
 /*
- * Get message text of last DTrack2/DTrack3 event message.
+ * Get message text of last DTrack2/DTRACK3 event message.
  */
 std::string DTrackSDK::getMessageMsg() const
 {

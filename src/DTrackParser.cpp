@@ -1,8 +1,8 @@
-/* DTrackParser: C++ source file
+/* DTrackSDK in C++: DTrackParser.cpp
  *
- * DTrackSDK: functions to process DTrack UDP packets (ASCII protocol).
+ * Functions to process DTrack UDP packets (ASCII protocol).
  *
- * Copyright 2013-2021, Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2013-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,9 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.7.0
- * 
  * Purpose:
  *  - DTrack network protocol according to:
- *    'DTrack2 User Manual, Technical Appendix' or 'DTrack3 Programmer's Guide'
+ *    'DTrack2 User Manual, Technical Appendix' or 'DTRACK3 Programmer's Guide'
  */
 
 #include "DTrackParser.hpp"
@@ -72,6 +70,8 @@ DTrackParser::DTrackParser()
 	act_num_body = act_num_flystick = act_num_meatool = act_num_mearef = act_num_hand = act_num_human = 0;
 	act_num_inertial = 0;
 	act_num_marker = 0;
+
+	act_is_status_available = false;
 }
 
 
@@ -91,6 +91,8 @@ void DTrackParser::startFrame()
 {
 	act_framecounter = 0;
 	act_timestamp = -1;   // i.e. not available
+	act_is_status_available = false;
+
 	loc_num_bodycal = loc_num_handcal = -1;  // i.e. not available
 	loc_num_flystick1 = loc_num_meatool1 = 0;
 }
@@ -229,7 +231,14 @@ bool DTrackParser::parseLine(char **line)
 		*line += 3;
 		return parseLine_3d(line);
 	}
-	
+
+	// line of system status data:
+	if ( strncmp( *line, "st ", 3 ) == 0 )
+	{
+		*line += 3;
+		return parseLine_st( line );
+	}
+
 	return true;  // ignore unknown line identifiers (could be valid in future DTracks)
 }
 
@@ -937,10 +946,8 @@ bool DTrackParser::parseLine_6di(char **line)
 /*
  * Parses a single line of single marker data in one tracking data packet.
  */
-bool DTrackParser::parseLine_3d(char **line)
+bool DTrackParser::parseLine_3d( char **line )
 {
-	int i;
-
 	// get number of markers
 	*line = string_get_i( *line, &act_num_marker );
 	if ( *line == NULL )
@@ -948,12 +955,14 @@ bool DTrackParser::parseLine_3d(char **line)
 		act_num_marker = 0;
 		return false;
 	}
-	if (act_num_marker > (int )act_marker.size()) {
-		act_marker.resize(act_num_marker);
+	if ( act_num_marker > ( int )act_marker.size() )
+	{
+		act_marker.resize( act_num_marker );
 	}
 
 	// get data of single markers
-	for (i=0; i<act_num_marker; i++) {
+	for ( int i = 0; i < act_num_marker; i++ )
+	{
 		*line = string_get_block( *line, "id", &act_marker[ i ].id, NULL, &act_marker[ i ].quality );
 		if ( *line == NULL )
 			return false;
@@ -963,6 +972,100 @@ bool DTrackParser::parseLine_3d(char **line)
 			return false;
 	}
 
+	return true;
+}
+
+
+/*
+ * Parses a single line of system status data in one tracking data packet.
+ */
+bool DTrackParser::parseLine_st( char** line )
+{
+	int ngrp, id, ncam, nval;
+	int iarr[ 5 ];
+
+	// get number of following block groups
+	*line = string_get_i( *line, &ngrp );
+	if ( *line == NULL )
+		return false;
+
+	if ( ngrp > 3 )  ngrp = 3;  // ignore additional (i.e. future) status types
+
+	// caution: expects exactly three status types in order of their ID number
+
+	for ( int igrp = 0; igrp < ngrp; igrp++ )
+	{
+		// get description of status type
+		if ( igrp == 2 )  // status type '2' has an additional value (number of cameras)
+		{
+			*line = string_get_block( *line, "iii", iarr, NULL, NULL );
+			if ( *line == NULL )
+				return false;
+
+			id = iarr[ 0 ];
+			ncam = iarr[ 1 ];
+			nval = iarr[ 2 ];
+		}
+		else  // for status types '0' and '1'
+		{
+			*line = string_get_block( *line, "ii", iarr, NULL, NULL );
+			if ( *line == NULL )
+				return false;
+
+			id = iarr[ 0 ];
+			ncam = 0;
+			nval = iarr[ 1 ];
+		}
+
+		// get values of status type
+		if ( id == 0 )  // general status values
+		{
+			if ( nval < 3 )  return false;  // more sophisticated at future enhancements of status values
+
+			*line = string_get_block( *line, "iii", iarr, NULL, NULL );
+			if ( *line == NULL )
+				return false;
+
+			act_status.numCameras = iarr[ 0 ];
+			act_status.numTrackedBodies = iarr[ 1 ];
+			act_status.numTrackedMarkers = iarr[ 2 ];
+		}
+		else if ( id == 1 )  // message statistics
+		{
+			if ( nval < 5 )  return false;  // more sophisticated at future enhancements of status values
+
+			*line = string_get_block( *line, "iiiii", iarr, NULL, NULL );
+			if ( *line == NULL )
+				return false;
+
+			act_status.numCameraErrorMessages = iarr[ 0 ];
+			act_status.numCameraWarningMessages = iarr[ 1 ];
+			act_status.numOtherErrorMessages = iarr[ 2 ];
+			act_status.numOtherWarningMessages = iarr[ 3 ];
+			act_status.numInfoMessages = iarr[ 4 ];
+		}
+		else if ( id == 2 )  // camera status values
+		{
+			if ( nval < 3 )  return false;  // more sophisticated at future enhancements of status values
+
+			// adjust length of vector
+			act_status.cameraStatus.resize( ncam );
+
+			for ( int icam = 0; icam < ncam; icam++ )
+			{
+				*line = string_get_block( *line, "iiii", iarr, NULL, NULL );
+				if ( *line == NULL )
+					return false;
+
+				act_status.cameraStatus[ icam ].idCamera = iarr[ 0 ];
+				act_status.cameraStatus[ icam ].numReflections = iarr[ 1 ];
+				act_status.cameraStatus[ icam ].numReflectionsUsed = iarr[ 2 ];
+				act_status.cameraStatus[ icam ].maxIntensity = iarr[ 3 ];
+			}
+		}
+	}
+
+	act_is_status_available = true;
 	return true;
 }
 
@@ -1142,5 +1245,25 @@ unsigned int DTrackParser::getFrameCounter() const
 double DTrackParser::getTimeStamp() const
 {
 	return act_timestamp;
+}
+
+
+/*
+ * Returns if system status data is available.
+ */
+bool DTrackParser::isStatusAvailable() const
+{
+	return act_is_status_available;
+}
+
+
+/*
+ * Get system status data.
+ */
+const DTrackStatus* DTrackParser::getStatus() const
+{
+	if ( ! act_is_status_available )  return NULL;
+
+	return &act_status;
 }
 
