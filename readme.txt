@@ -1,4 +1,4 @@
-Copyright (c) 2007-2022 Advanced Realtime Tracking GmbH & Co. KG
+Copyright (c) 2007-2023 Advanced Realtime Tracking GmbH & Co. KG
 
 Purpose of DTrackSDK
 --------------------
@@ -29,5 +29,5 @@ Am Oeferl 6
 D-82362 Weilheim
 Germany
 
-http://www.ar-tracking.de/
+https://www.ar-tracking.de/
 

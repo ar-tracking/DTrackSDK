@@ -30,13 +30,14 @@
  * Purpose:
  *  - example with DTrack2/DTRACK3 remote commands:
  *    starts measurement, collects some frames and stops measurement again
- *  - for DTrackSDK v2.8.0 (or newer)
+ *  - for DTrackSDK v2.9.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 // global DTrackSDK
 static DTrackSDK* dt = NULL;
@@ -152,7 +153,11 @@ static void output_to_console()
 	std::cout.setf( std::ios::fixed, std::ios::floatfield );
 
 	std::cout << std::endl << "frame " << dt->getFrameCounter() << " ts " << dt->getTimeStamp()
-	          << " nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
+	          << " ets " << dt->getTimeStampSec() << "." << std::setfill( '0' ) << std::setw( 6 ) << dt->getTimeStampUsec()
+	          << " lat " << dt->getLatencyUsec()
+	          << std::endl;
+
+	std::cout << "      nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
 	          << " nmea " << dt->getNumMeaTool() << " nmearef " << dt->getNumMeaRef() 
 	          << " nhand " << dt->getNumHand() << " nmar " << dt->getNumMarker() 
 	          << " nhuman " << dt->getNumHuman() << " ninertial " << dt->getNumInertial()

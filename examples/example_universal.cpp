@@ -2,7 +2,7 @@
  *
  * C++ example using universal DTrackSDK constructor for all modes.
  *
- * Copyright (c) 2019-2023 Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2019-2024 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,12 +31,13 @@
  *  - example with or without DTrack2/DTRACK3 remote commands
  *  - in communicating mode: starts measurement, collects some frames and stops measurement again
  *  - in listening mode: please start measurement manually e.g. in DTrack frontend application
- *  - for DTrackSDK v2.8.0 (or newer)
+ *  - for DTrackSDK v2.9.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
 
 #include <iostream>
+#include <iomanip>
 
 // global DTrackSDK
 static DTrackSDK* dt = NULL;
@@ -54,7 +55,7 @@ int main( int argc, char** argv )
 {
 	if ( argc != 2 )
 	{
-		std::cout << "Usage: example_universal [<server host/ip>:]<data port>" << std::endl;
+		std::cout << "Usage: example_universal [<server host/ip>:]<data port>[:fw]" << std::endl;
 		return -1;
 	}
 
@@ -62,29 +63,30 @@ int main( int argc, char** argv )
 
 	dt = new DTrackSDK( (const char *)argv[ 1 ] );
 
-	if ( ! dt->isDataInterfaceValid() )
+	if ( ! dt->isValid() )
 	{
-		std::cout << "DTrackSDK init error" << std::endl;
+		if ( ! dt->isDataInterfaceValid() )
+		{
+			std::cout << "DTrackSDK fatal error: initializing data interface" << std::endl;
+		}
+		else if ( ! dt->isCommandInterfaceValid() )
+		{
+			std::cout << "DTrackSDK error: cannot connect to ATC" << std::endl;
+		}
+		else if ( ! dt->isCommandInterfaceFullAccess() )  // ensure full access for DTrack2/3 commands, if in communicating mode
+		{
+			std::cout << "DTrackSDK error: full access to ATC required" << std::endl;
+		}                                                 // maybe DTrack2/DTRACK3 frontend is still connected to ATC
+
 		delete dt;
 		return -3;
 	}
-	std::cout << "connected to ATC '" << argv[ 1 ] << "', listening at local data port " << dt->getDataPort() << std::endl;
+
+	std::cout << "Connected to ATC '" << argv[ 1 ] << "', listening at local data port " << dt->getDataPort() << std::endl;
 
 //	dt->setCommandTimeoutUS( 30000000 );  // NOTE: change here timeout for exchanging commands, if necessary
 //	dt->setDataTimeoutUS( 3000000 );      // NOTE: change here timeout for receiving tracking data, if necessary
 //	dt->setDataBufferSize( 100000 );      // NOTE: change here buffer size for receiving tracking data, if necessary
-
-	if ( dt->isCommandInterfaceValid() )  // ensure full access for DTrack2/DTRACK3 commands, if in communicating mode
-	{
-		if ( ! dt->isCommandInterfaceFullAccess() )
-		{
-			std::cout << "Full access to ATC required!" << std::endl;  // maybe DTrack2/3 frontend is still connected to ATC
-			data_error_to_console();
-			messages_to_console();
-			delete dt;
-			return -10;
-		}
-	}
 
 	// measurement:
 
@@ -137,7 +139,11 @@ static void output_to_console()
 	std::cout.setf( std::ios::fixed, std::ios::floatfield );
 
 	std::cout << std::endl << "frame " << dt->getFrameCounter() << " ts " << dt->getTimeStamp()
-	          << " nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
+	          << " ets " << dt->getTimeStampSec() << "." << std::setfill( '0' ) << std::setw( 6 ) << dt->getTimeStampUsec()
+	          << " lat " << dt->getLatencyUsec()
+	          << std::endl;
+
+	std::cout << "      nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
 	          << " nmea " << dt->getNumMeaTool() << " nmearef " << dt->getNumMeaRef() 
 	          << " nhand " << dt->getNumHand() << " nmar " << dt->getNumMarker() 
 	          << " nhuman " << dt->getNumHuman() << " ninertial " << dt->getNumInertial()

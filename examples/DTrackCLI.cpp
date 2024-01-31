@@ -1,9 +1,8 @@
-/* DTrack2CLI (C++)
+/* DTrackCLI
  *
- * DTrack2CLI:
- *    C++ based Command Line Interface for DTrack2 or DTrack3
+ * C++ based Command Line Interface for DTrack2 or DTRACK3
  *
- * Copyright 2016-2021, Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2016-2023 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,8 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Purpose:
- *  - Command Line Interface for DTrack2 or DTrack3:
- *	   processes DTrack2/3 commands from command line or read from files
+ *  - Command Line Interface for DTrack2 or DTRACK3:
+ *	   processes DTrack2/DTRACK3 commands from command line or read from files
  *  - for DTrackSDK v2.6.0 (or newer)
  */
 
@@ -42,14 +41,14 @@
 // global DTrackSDK
 static DTrackSDK* dt = NULL;
 
-// version of DTrack2CLI
+// version of DTrackCLI
 static const unsigned int VERSION_MAJOR = 1;
-static const unsigned int VERSION_MINOR = 0;
+static const unsigned int VERSION_MINOR = 1;
 static const unsigned int VERSION_PATCH = 0;
 
 enum ERRORS {
 	ERR_WRONG_INPUT_PARAMETER = -101 ,		//!< wrong (number of) input parameter(s) 
-	ERR_WRONG_USAGE = -102 ,				//!< wrong usage of DTrack2CLI
+	ERR_WRONG_USAGE = -102 ,				//!< wrong usage of DTrackCLI
 	ERR_DTRACKSDK_INIT = -103 ,				//!< DTrackSDK Init Error (no TCP connection to DTrack2)
 	ERR_DTRACK2_CMD_SPELLING = -104 ,		//!< wrong spelling of a DTrack2 command
 	ERR_OPEN_FILE = -105 ,					//!< unable to open file
@@ -74,10 +73,10 @@ static void dtrack2_get_and_print_all_event_messages()
 
 
 /**
-*	\brief Checks if DTrack2/3 backend returned an error and prints it
+*	\brief Checks if DTrack2/DTRACK3 backend returned an error and prints it
 *	
-*	Checks for error received from DTrack2/3 and prints it,
-*	makes sure DTrack2CLI displays the same error number as DTrack2/3 backend.
+*	Checks for error received from DTrack2/DTRACK3 and prints it,
+*	makes sure DTrackCLI displays the same error number as DTrack2/DTRACK3 backend.
 *	Also prints all event messages if an error appeared.
 */
 static int dtrack2_error_to_console()
@@ -98,7 +97,7 @@ static int dtrack2_error_to_console()
 */
 static void show_help( const std::string& programName )
 {
-	std::cout << "DTrack2CLI v" << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << std::endl;
+	std::cout << "DTrackCLI v" << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << std::endl;
 	std::cout << "Usage: " << programName << " <ATC hostname or ip> [<action> ...]" << std::endl;
 	std::cout << "Apply an action to the ART Controller (ATC) specified by ACTION(s)" << std::endl;
 	std::cout << "with <ATC hostname or ip> being either the IP address or the" << std::endl;
@@ -107,10 +106,10 @@ static void show_help( const std::string& programName )
 	std::cout << "  -meastart                   start measurement" << std::endl;
 	std::cout << "  -meastop                    stop measurement" << std::endl;
 	std::cout << "  -shutdown                   shut down the ART Controller" << std::endl;
-	std::cout << "  -get <parameter>            read and display the value of a DTrack2/3 parameter" << std::endl;
-	std::cout << "  -set <parameter> <value>    change the value of a DTrack2/3 parameter" << std::endl;
-	std::cout << "  -cmd <dtrack2 command>      send DTrack2 command directly" << std::endl;
-	std::cout << "  -f <filename>               read and execute DTrack2/3 commands from a file" << std::endl;
+	std::cout << "  -get <parameter>            read and display the value of a DTrack2/DTRACK3 parameter" << std::endl;
+	std::cout << "  -set <parameter> <value>    change the value of a DTrack2/DTRACK3 parameter" << std::endl;
+	std::cout << "  -cmd <dtrack2 command>      send DTrack2/DTRACK3 command directly" << std::endl;
+	std::cout << "  -f <filename>               read and execute DTrack2/DTRACK3 commands from a file" << std::endl;
 	std::cout << "  -h, --help, /?              display this help" << std::endl;
 }
 
@@ -281,7 +280,7 @@ static int set_dtrack2_parameter( const std::string& someParameter )
 
 
 /**
-*	\brief Sends raw DTrack2 command
+*	\brief Sends raw DTrack2/DTRACK3 command
 */
 static int send_dtrack2_command( const std::string& rawDtrack2Command )
 {
@@ -361,7 +360,7 @@ static int open_file( const std::string& file_to_open )
 	std::string readLine;
 	std::ifstream readFile( file_to_open.c_str() );
 
-	// returns the first occured error after DTrack2CLI is finished
+	// returns the first occured error after DTrackCLI is finished
 	int firstErrorInFile = 0;
 
 	// check if file opened correctly
@@ -373,7 +372,7 @@ static int open_file( const std::string& file_to_open )
 			if ( readLine.empty() )
 				continue;
 
-			// errors will be displayed, but DTrack2CLI won't stop
+			// errors will be displayed, but DTrackCLI won't stop
 			int errorOccured = process_command( readLine );
 			if ( ( firstErrorInFile == 0 ) && errorOccured )
 				firstErrorInFile = errorOccured;
@@ -554,19 +553,19 @@ int main( int argc, char** argv )
 		return ERR_DTRACKSDK_INIT;
 	}
 
-	// runs DTrack2CLI without commands, enabling pipes or multiple commands (executed seperately)
+	// runs DTrackCLI without commands, enabling pipes or multiple commands (executed seperately)
 	if ( argc == 2 ) 
 	{
 		// look for pipe
 		std::string pipeCommand;
 
-		// returns the first occured error after DTrack2CLI is finished
+		// returns the first occured error after DTrackCLI is finished
 		int firstErrorInPipe = 0;
 
 		// checks for different possible commands
 		while ( std::getline( std::cin, pipeCommand ) ) 
 		{
-			// errors will be displayed, but DTrack2CLI won't stop
+			// errors will be displayed, but DTrackCLI won't stop
 			int errorOccured = process_command( pipeCommand );
 			if ( ( firstErrorInPipe == 0 ) && errorOccured )
 				firstErrorInPipe = errorOccured;
@@ -578,7 +577,7 @@ int main( int argc, char** argv )
 			return firstErrorInPipe;
 		}
 	}
-	// runs DTrack2CLI with entered commands
+	// runs DTrackCLI with entered commands
 	else
 	{
 		// check input parameters

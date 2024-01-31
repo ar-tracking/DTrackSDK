@@ -1,8 +1,8 @@
-/* DTrackSDK: C++ example
+/* DTrackSDK in C++: example_listening.cpp
  *
- * C++ example using DTrackSDK for pure listening
+ * C++ example using DTrackSDK for pure listening.
  *
- * Copyright 2005-2021, Advanced Realtime Tracking GmbH & Co. KG
+ * Copyright (c) 2005-2024 Advanced Realtime Tracking GmbH & Co. KG
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,15 +28,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Purpose:
- *  - example without DTrack2/DTrack3 remote commands: just collects frames
+ *  - example without DTrack2/DTRACK3 remote commands: just collects frames
  *  - please start measurement manually e.g. in DTrack frontend application
- *  - for DTrackSDK v2.6.0 (or newer)
+ *  - for DTrackSDK v2.9.0 (or newer)
  */
 
 #include "DTrackSDK.hpp"
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 // global DTrackSDK
 static DTrackSDK* dt = NULL;
@@ -83,6 +84,9 @@ int main( int argc, char** argv )
 
 	// measurement:
 
+//	dt->enableStatefulFirewallConnection( "atc-302301001" );  // NOTE: optionally enable UDP traffic through a
+	                                                          // stateful firewall
+
 	int count = 0;
 	while ( count++ < 1000 )  // collect 1000 frames
 	{
@@ -110,10 +114,15 @@ static void output_to_console()
 	std::cout.setf( std::ios::fixed, std::ios::floatfield );
 
 	std::cout << std::endl << "frame " << dt->getFrameCounter() << " ts " << dt->getTimeStamp()
-	          << " nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
+	          << " ets " << dt->getTimeStampSec() << "." << std::setfill( '0' ) << std::setw( 6 ) << dt->getTimeStampUsec()
+	          << " lat " << dt->getLatencyUsec()
+	          << std::endl;
+
+	std::cout << "      nbod " << dt->getNumBody() << " nfly " << dt->getNumFlyStick()
 	          << " nmea " << dt->getNumMeaTool() << " nmearef " << dt->getNumMeaRef() 
 	          << " nhand " << dt->getNumHand() << " nmar " << dt->getNumMarker() 
 	          << " nhuman " << dt->getNumHuman() << " ninertial " << dt->getNumInertial()
+	          << " status " << ( dt->isStatusAvailable() ? "yes" : "no" )
 	          << std::endl;
 
 	// Standard bodies:
@@ -369,6 +378,40 @@ static void output_to_console()
 			          << " "     << inertial->rot[ 3 ] << " " << inertial->rot[ 4 ] << " " << inertial->rot[ 5 ]
 			          << " "     << inertial->rot[ 6 ] << " " << inertial->rot[ 7 ] << " " << inertial->rot[ 8 ]
 			          << std::endl;
+		}
+	}
+
+	// System status:
+	if ( ! dt->isStatusAvailable() )
+	{
+		std::cout << "no system status data" << std::endl;
+	}
+	else
+	{
+		const DTrackStatus* status = dt->getStatus();
+		if ( status == NULL )
+		{
+			std::cout << "DTrackSDK fatal error: invalid system status" << std::endl;
+		}
+		else
+		{
+			// general status values
+			std::cout << "status gen nc " << status->numCameras
+			          << " nb " << status->numTrackedBodies << " nm " << status->numTrackedMarkers << std::endl;
+
+			// message statistics
+			std::cout << "status msg nce " << status->numCameraErrorMessages << " ncw " << status->numCameraWarningMessages
+			          << " noe " << status->numOtherErrorMessages << " now " << status->numOtherWarningMessages
+			          << " ni " << status->numInfoMessages << std::endl;
+
+			// camera status values
+			for ( int i = 0; i < status->numCameras; i++ )
+			{
+				std::cout << "status cam " << status->cameraStatus[ i ].idCamera
+				          << " ns " << status->cameraStatus[ i ].numReflections
+				          << " nu " << status->cameraStatus[ i ].numReflectionsUsed
+				          << " mi " << status->cameraStatus[ i ].maxIntensity << std::endl;
+			}
 		}
 	}
 }
