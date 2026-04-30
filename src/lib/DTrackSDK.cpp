@@ -28,8 +28,6 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Version v2.9.0
- *
  * Purpose:
  *  - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
  *  - sends and receives DTrack2/DTRACK3 commands (TCP)
@@ -41,6 +39,7 @@
 
 #include "DTrackSDK.hpp"
 #include "DTrackParse.hpp"
+#include "DTrackSDKVersion.hpp"
 
 #include <cstring>
 #include <cstdlib>
@@ -286,6 +285,13 @@ DTrackSDK::~DTrackSDK()
 	delete d_tcp;
 	net_exit();
 }
+
+
+/*
+ * Get SDK version
+ */
+std::string DTrackSDK::getVersion() 
+{ return DTRACKSDK_VERSION; }
 
 
 /*

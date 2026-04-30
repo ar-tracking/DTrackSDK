@@ -28,8 +28,6 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Version v2.9.0
- *
  * Purpose:
  *  - receives DTrack UDP packets (ASCII protocol) and converts them into easier to handle data
  *  - sends and receives DTrack2/DTRACK3 commands (TCP)
@@ -171,6 +169,12 @@ public:
 	 */
 	~DTrackSDK();
 
+
+	/**
+	 * \brief Get SDK version 
+	 * @return Version string
+	 */
+	static std::string getVersion();
 
 	/**
 	 * \brief Returns if constructor was successful due to the wanted mode.

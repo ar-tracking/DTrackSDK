@@ -1,0 +1,15 @@
+---
+author:
+- Advanced Realtime Tracking GmbH & Co. KG
+keywords:
+  - DTrackSDK
+  - DTrack
+  - DTrack2
+  - DTRACK3
+  - C++
+abstract: |
+  This guide introduces DTrackSDK and explains how to integrate it into C++ projects.
+  It also covers example applications and compatibility wrappers for legacy SDK APIs.
+fontfamily: cabin
+fontfamilyoptions: sfdefault
+---

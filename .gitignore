@@ -1,0 +1,20 @@
+syntax: glob
+*.o
+.vs/
+*/debug/*
+*/release/*
+Test/bin
+ship_it/*
+.*.swp
+*.user
+*.*~
+build/
+3rd/
+extern/
+archiv/
+doc/*.pdf
+*tmp/
+*.md
+!Readme.md
+!doc/*.md
+

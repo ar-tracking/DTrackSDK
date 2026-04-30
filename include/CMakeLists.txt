@@ -1,0 +1,6 @@
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+	DESTINATION include
+	COMPONENT cppheaders
+	FILES_MATCHING PATTERN "*.h*"
+	PATTERN "CMakeFiles" EXCLUDE
+)
